@@ -1,0 +1,58 @@
+// PRUSS program to flash a LED on P9_27 (pru0_pru_r30_5) until a button 
+// that is connected to P9_28 (pru0_pru_r31_3 is pressed. This program 
+// was writen by Derek Molloy for the book Exploring BeagleBone
+
+.origin 0                        // start of program in PRU memory
+.entrypoint START                // program entry point (for a debugger)
+
+#define INS_PER_US   200         // 5ns per instruction
+#define INS_PER_DELAY_LOOP 2     // two instructions per delay loop
+                                 // set up a 50ms delay
+
+#define PRU0_R31_VEC_VALID 32    // allows notification of program completion
+#define PRU_EVTOUT_0    3        // the event number that is sent back
+
+START:
+// Trigger duration (is pulse delay at the same time)
+	MOV     r3, 0x00000000   // Move address of Data RAM0 to r3
+	LBBO    r0, r3, 0, 4     // Read the value from address stored in r3 to register r0. Read with Offset = 0 bytes, size of data = 4 byte
+
+    SET	r30.t1		 // turn on the output pin P9_29
+TRIGGERDURATION:
+	SUB	r0, r0, 1        // Decrement REG0 by 1
+	QBNE	TRIGGERDURATION, r0, 0   // Loop to TRIGGERDURATION, unless REG0=0
+    CLR	r30.t1           // clear the output pin P9_29
+
+
+
+// Pulse duration
+	MOV     r3, 0x00000004 // Move address of Data RAM0 with offset 4 byte to r3
+	LBBO	r0, r3, 0, 4     // Read the value from address stored in r3 to register r0. Read with Offset = 0 bytes, size of data = 4 byte
+
+    SET	r30.t5           // turn on the output pin (LED on) P9_27
+PULSEDURATION:
+	SUB	r0, r0, 1        // decrement REG0 by 1
+	QBNE	PULSEDURATION, r0, 0  // Loop to PULSEDURATION, unless REG0=0
+    CLR	r30.t5           // clear the output pin (LED off) P9_27
+
+
+
+// Pause duration
+    MOV     r3, 0x00000008   // Move address of Data RAM0 with offset 8 byte to r3
+    LBBO	r0, r3, 0, 4     // Read the value from address stored in r3 to register r0. Read with  Offset = 0 bytes, size of data = 4 byte
+
+PAUSEDURATION:
+    SUB r0, r0, 1   // decrement REG0 by 1
+    QBNE    PAUSEDURATION, r0, 0    // Loop to PAUSEDURATION, unless REG0=0
+    
+// terminate?
+    MOV r3, 0x0000000C
+    LBBO    r0, r3, 0, 4
+    QBNE    START, r0, 0
+
+// terminate?
+//	QBBC	START, r31.t3    // is the button pressed? If not, loop
+
+END:                             // notify the calling app that finished
+	MOV	R31.b0, PRU0_R31_VEC_VALID | PRU_EVTOUT_0
+	HALT                     // halt the pru program

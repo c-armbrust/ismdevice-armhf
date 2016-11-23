@@ -446,27 +446,33 @@ double Camera::getFps()
 	return fps;
 }
 
-void Camera::setPixelclock(unsigned int v) 
+bool Camera::setPixelclock(unsigned int v) 
 {
     if(is_PixelClock(hCam, IS_PIXELCLOCK_CMD_SET, (void*)&v, sizeof(v)) != IS_SUCCESS) {
 		std::cout<<"Set pixel clock error:\n";
-		terminate_on_error(hCam);
+		//terminate_on_error(hCam);
+		return false;
 	}	
+	return true;
 }
 
-void Camera::setExposure(double v)
+bool Camera::setExposure(double v)
 {
 	if(is_Exposure(hCam, IS_EXPOSURE_CMD_SET_EXPOSURE, (void*)&v, sizeof(v)) != IS_SUCCESS){
 		std::cout << "Set exposure error\n";
-		terminate_on_error(hCam);
+		//terminate_on_error(hCam);
+		return false;
 	}
+	return true;
 }
 
-void Camera::setGain(unsigned int v)
+bool Camera::setGain(unsigned int v)
 {
 	if(is_SetHardwareGain(hCam, v, 0, 0, 0) != IS_SUCCESS)
 	{
 		std::cout << "is_SetHardwareGain error:\n";
-		terminate_on_error(hCam);
+		//terminate_on_error(hCam);
+		return false;
 	}
+	return true;
 }

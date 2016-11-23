@@ -36,9 +36,9 @@ public:
 	void setTriggerduration(unsigned int);
 	void setPulseduration(unsigned int);
 	void setPauseduration(unsigned int);
-	void setPixelclock(unsigned int);
-	void setExposure(double);
-	void setGain(unsigned int);
+	bool setPixelclock(unsigned int);
+	bool setExposure(double);
+	bool setGain(unsigned int);
 
 
 private:

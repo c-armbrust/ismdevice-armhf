@@ -37,7 +37,7 @@ private:
 	friend class DeviceState;
 
 	void ChangeState(DeviceState*);
-	void UpdateSettings(std::string);
+	bool UpdateSettings(std::string);
 	std::string getDeviceId();
 	static IOTHUBMESSAGE_DISPOSITION_RESULT ReceiveMessageCallback(IOTHUB_MESSAGE_HANDLE, void*);
 	static void SendConfirmationCallback(IOTHUB_CLIENT_CONFIRMATION_RESULT, void*);
@@ -69,7 +69,7 @@ public:
 
 protected:
 	void ChangeState(Device*, DeviceState*);
-	void UpdateSettings(Device*, std::string);
+	bool UpdateSettings(Device*, std::string);
 	void SendD2C_DeviceSettings(Device*);
 	void StartCamera(Device* d);
 	void StopCamera(Device* d);

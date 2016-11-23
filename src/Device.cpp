@@ -28,18 +28,23 @@ void Device::ChangeState(DeviceState* s)
 	_state = s;
 }
 
-void Device::UpdateSettings(std::string msgbody)
+bool Device::UpdateSettings(std::string msgbody)
 {
 	std::cout << "\nold settings:" << std::endl;
 	settings->Report();
 	settings->Deserialize(msgbody);
 	
 	// Update camera settings
-	camera->setGain(settings->getGain());
-	camera->setExposure(settings->getExposure());
+	if(camera->setGain(settings->getGain()) == false)
+		return false;
+	if(camera->setExposure(settings->getExposure()) == false)
+		return false;
 
 	std::cout << "\nnew settings:" << std::endl;
 	settings->Report();
+
+	// No errors occured
+	return true;
 }
 
 // DeviceId is part of the connection string
@@ -154,9 +159,9 @@ void DeviceState::ChangeState(Device* d, DeviceState* s)
 	d->ChangeState(s);
 }
 
-void DeviceState::UpdateSettings(Device* d, std::string msgbody)
+bool DeviceState::UpdateSettings(Device* d, std::string msgbody)
 {
-	d->UpdateSettings(msgbody);	
+	return d->UpdateSettings(msgbody);	
 }
 
 void DeviceState::SendD2C_DeviceSettings(Device* d)
@@ -354,9 +359,10 @@ IOTHUBMESSAGE_DISPOSITION_RESULT ReadyState::SetDeviceSettings(Device* d, std::s
     // ACK msg
     std::cout << "+ READY_STATE: Set new DeviceSettings values!" << std::endl;
 	
-	UpdateSettings(d, msgbody);
-
-	return IOTHUBMESSAGE_ACCEPTED;
+	if(UpdateSettings(d, msgbody) == true)
+		return IOTHUBMESSAGE_ACCEPTED;
+	else
+		return IOTHUBMESSAGE_REJECTED;
 }
 
 IOTHUBMESSAGE_DISPOSITION_RESULT ReadyState::GetDeviceSettings(Device* d)
@@ -484,9 +490,10 @@ IOTHUBMESSAGE_DISPOSITION_RESULT PreviewState::SetDeviceSettings(Device* d, std:
     // ACK msg
     std::cout << "+ PREVIEW_STATE: Set new DeviceSettings values!" << std::endl;
 
-	UpdateSettings(d, msgbody);
-
-	return IOTHUBMESSAGE_ACCEPTED;
+	if(UpdateSettings(d, msgbody) == true)
+		return IOTHUBMESSAGE_ACCEPTED;
+	else
+		return IOTHUBMESSAGE_REJECTED;
 }
 
 IOTHUBMESSAGE_DISPOSITION_RESULT PreviewState::GetDeviceSettings(Device* d)

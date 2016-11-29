@@ -17,7 +17,7 @@
 #include "PubSub.h"
 
 
-class Camera : public Publisher
+class Camera
 {
 public:
 	Camera(utility::string_t, utility::string_t, std::string);
@@ -27,13 +27,7 @@ public:
 	void Stop();
 	void GetCameraInfo();
 
-	// Pub Sub interface
-	void Attach(Subscriber*);
-	void Detach(Subscriber*);
-	void Notify();
-
 // get/set methods
-	inline std::string getCurrentCaptureUri(){return currentCaptureUri;} 
 	unsigned int getTriggerduration();
 	unsigned int getPulseduration();
 	unsigned int getPauseduration();
@@ -48,6 +42,8 @@ public:
 	bool setExposure(double);
 	bool setGain(unsigned int);
 
+public: //public exposed  Publishers aka Events
+	CaptureNotificationPublisher NewCaptureUploaded;
 
 private:
 	void InitBlobStorage();
@@ -63,7 +59,6 @@ private:
 	const utility::string_t containerName;
 	const std::string storageAccountName;
 	azure::storage::cloud_blob_container container;
-	std::string currentCaptureUri;
 	
 	// PRU
 	tpruss_intc_initdata pruss_intc_initdata;

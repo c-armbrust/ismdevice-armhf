@@ -4,7 +4,7 @@
 int main()
 {
 	Device* d = new Device(); 
-	d->SubscribeCameraNotifications();
+	d->SubscribeNotifications();
 
 	// Full state test
 	/*

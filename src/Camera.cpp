@@ -3,9 +3,6 @@
 
 Camera::Camera(utility::string_t stoconnstr, utility::string_t containername, std::string storageaccname) : storageConnectionString{stoconnstr}, containerName{containername}, storageAccountName{storageaccname}
 {
-	// Pub Sub vector of subscribers
-	subscribers = new std::list<Subscriber*>();
-
 	InitBlobStorage();
 
 	InitPRU();
@@ -37,31 +34,8 @@ Camera::~Camera()
 	}
 }
 
-
-
-// Pub Sub interface
-//
-void Camera::Attach(Subscriber* sub)
-{
-	subscribers->push_back(sub);	
-}
-
-void Camera::Detach(Subscriber* sub)
-{
-	subscribers->remove(sub);
-}
-
-void Camera::Notify()
-{
-	auto it = subscribers->begin();
-	for(; it != subscribers->end(); it++)
-		(*it)->OnNotification(this); // pass the changed subject (publisher) as param
-}
-
-
-
 void Camera::terminate_on_error(HIDS hCam)
-{
+{	
 	INT pErr; // Error code
 	IS_CHAR* ppcErr; // Error text
 	is_GetError(hCam, &pErr, &ppcErr);
@@ -73,17 +47,8 @@ void Camera::terminate_on_error(HIDS hCam)
 }
 
 
-
 void Camera::UploadCaptureToBlobStorage(std::string filename)
 {
-	// TODO:
-	// 0. Bei Trigger speichere Filename in eine Membervariable bzw. Ã¼bergib als Para
-	// 1. Lade hier Blob unter diesem Filename hoch	
-	// 2. Speichere Blob Uri in Membervariable
-	// 3. LÃsche File auf BBB
-	// 4. Signalisiere Device Ãber Observer Pattern nach dem upload, die Uri
-	// 
-	
 	try
 	{
 		// Retrieve reference to a blob named <filename>.
@@ -91,16 +56,17 @@ void Camera::UploadCaptureToBlobStorage(std::string filename)
 	
 		// Create or overwrite the <filename> blob with contents from a local file.
 		blockBlob.upload_from_file(utility::string_t{filename});
-//		std::wcout << blockBlob.uri().primary_uri().to_string() << std::endl;
 
 		// Delete local file
 		std::remove(filename.c_str());
 
-		// TODO: Signalisiere Device per Observer Pattern die Uri 
-		currentCaptureUri = "https://" + storageAccountName + ".blob.core.windows.net/" + containerName + "/" + filename;
+		std::string uri = "https://" + storageAccountName + ".blob.core.windows.net/" + containerName + "/" + filename;
 		
+		// Set CaptureNotification
+		CaptureNotification notification(uri);
+		NewCaptureUploaded.SetNotification(&notification);
 		// Notify all subscribers	
-		Notify();
+		NewCaptureUploaded.Notify();
 	}
 	catch(const std::exception& e)
 	{

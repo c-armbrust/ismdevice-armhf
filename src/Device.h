@@ -34,7 +34,7 @@ public:
 	void ReceiveC2D();
 	
 	// Pub Sub attach 
-	void SubscribeCameraNotifications();
+	void SubscribeNotifications();
 	
 
 private:
@@ -42,7 +42,7 @@ private:
 
 	void ChangeState(DeviceState*);
 	bool UpdateSettings(std::string);
-	void OnNotification(void*); // Pub Sub interface
+	void OnNotification(Publisher*); // Pub Sub interface
 	std::string getDeviceId();
 	static IOTHUBMESSAGE_DISPOSITION_RESULT ReceiveMessageCallback(IOTHUB_MESSAGE_HANDLE, void*);
 	static void SendConfirmationCallback(IOTHUB_CLIENT_CONFIRMATION_RESULT, void*);

@@ -7,16 +7,16 @@
 #include <stdlib.h>
 #include "json.hpp"
 
-const char* Device::connectionString = "[iot hub connection string]";
+const char* Device::connectionString = "";
 
-const utility::string_t storage_connection_string(U("[storage connection string]"));
+const utility::string_t storage_connection_string(U(""));
 
-const std::string storage_acc_name = "[storage account name]";
+const std::string storage_acc_name = "";
 
 
 
 // use lower case letters only for container name
-const utility::string_t container_name(U("[container name]"));
+const utility::string_t container_name(U(""));
 
 Device::Device()
 {
@@ -35,23 +35,36 @@ Device::Device()
 Device::~Device()
 {
 	// Pub Sub detach
-	camera->Detach(this);
+	camera->NewCaptureUploaded.Detach(this);
 }
 
 
 
 // Pub Sub interface
-void Device::OnNotification(void* context)
+void Device::OnNotification(Publisher* context)
 {
-	// Cast context to Camera* (only publisher at the moment, so no conditional statement required)
-	Camera* cam = (Camera*)context;
-	std::string currentCaptureUri = cam->getCurrentCaptureUri();
-	std::cout << "Camera notification: " << currentCaptureUri << std::endl;
+	// Use RTTI (run-time type information) mechanism of C++ to cast in the correct concrete notification type
+	// http://stackoverflow.com/questions/351845/finding-the-type-of-an-object-in-c
+	
+	Notification* notification = context->GetNotification();
+
+	if(dynamic_cast<CaptureNotification*>(notification) != nullptr)
+	{
+		std::string uri = dynamic_cast<CaptureNotification*>(notification)->CurrentCaptureUri;
+		std::cout << "Camera notification: " << uri << std::endl;
+	}
+	/* ...
+	if(dynamic_cast<[an other concrete notification type ptr]>(notification) != nullptr)
+	{
+		// access fields of that concrete notification type
+		// ...
+	}
+	*/
 }
 
-void Device::SubscribeCameraNotifications()
+void Device::SubscribeNotifications()
 {
-	camera->Attach(this);
+	camera->NewCaptureUploaded.Attach(this);
 }
 
 

@@ -29,8 +29,14 @@ public:
 	static const std::string SET_DEVICE_SETTINGS;
 	
 	// D2C Commands
+	/* Obsolete. Use CAPTURE_UPLOADED and look at the StateName field
+	 * RunState -> DAT
+	 * PreviewState -> PRV
+	 *
 	static const std::string DAT;
 	static const std::string PRV;
+	*/
+	static const std::string CAPTURE_UPLOADED;
 
 	// D2C Dashboard Commands 
 	static const std::string UPDATE_DASHBOARD_CONTROLS;

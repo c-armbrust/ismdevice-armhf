@@ -33,7 +33,7 @@ public:
 	
 	void ReceiveC2D();
 	
-	// Pub Sub attach 
+	// Pub Sub attach (not possible in ctor because this ptr is required)
 	void SubscribeNotifications();
 	
 
@@ -46,7 +46,7 @@ private:
 	std::string getDeviceId();
 	static IOTHUBMESSAGE_DISPOSITION_RESULT ReceiveMessageCallback(IOTHUB_MESSAGE_HANDLE, void*);
 	static void SendConfirmationCallback(IOTHUB_CLIENT_CONFIRMATION_RESULT, void*);
-	void SendD2C_DeviceSettings();
+	void SendD2C_DeviceSettings(std::string);
 	void StartCamera();
 	void StopCamera();
 
@@ -75,7 +75,7 @@ public:
 protected:
 	void ChangeState(Device*, DeviceState*);
 	bool UpdateSettings(Device*, std::string);
-	void SendD2C_DeviceSettings(Device*);
+	void SendD2C_DeviceSettings(Device*, std::string);
 	void StartCamera(Device* d);
 	void StopCamera(Device* d);
 };

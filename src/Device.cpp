@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "json.hpp"
+#include <exception>
 
 const char* Device::connectionString = "";
 
@@ -52,6 +53,10 @@ void Device::OnNotification(Publisher* context)
 	{
 		std::string uri = dynamic_cast<CaptureNotification*>(notification)->CurrentCaptureUri;
 		std::cout << "Camera notification: " << uri << std::endl;
+		
+		// Update settings with new current capture uri and send them as D2C message 
+		settings->setCurrentCaptureUri(uri);
+		SendD2C_DeviceSettings(CommandType::CAPTURE_UPLOADED);
 	}
 	/* ...
 	if(dynamic_cast<[an other concrete notification type ptr]>(notification) != nullptr)
@@ -210,9 +215,9 @@ bool DeviceState::UpdateSettings(Device* d, std::string msgbody)
 	return d->UpdateSettings(msgbody);	
 }
 
-void DeviceState::SendD2C_DeviceSettings(Device* d)
+void DeviceState::SendD2C_DeviceSettings(Device* d, std::string cmdType)
 {
-	d->SendD2C_DeviceSettings();
+	d->SendD2C_DeviceSettings(cmdType);
 }
 
 void DeviceState::StartCamera(Device* d)
@@ -237,32 +242,35 @@ void Device::ReceiveC2D()
     }
 }
 
-void Device::SendD2C_DeviceSettings()
+// Look how to pass parameter to the threads lambda:
+// http://stackoverflow.com/questions/25536956/how-to-write-lambda-function-with-arguments-c
+void Device::SendD2C_DeviceSettings(std::string cmdType)
 {
-    std::thread t([&]{
-	/* Probably get some settings directly from the camera, update the corresponding DeviceSettings fields and send it. So e.g. methods like: 
-	 *	camera->getFps();
-	 *	camera->getGain();
-	 *	camera->getExposure();
-	 *	camera->getPixelclock();
-	 * ..may be used here to update device settings vefore sending them. 
-     */
-		IOTHUB_MESSAGE_HANDLE messageHandle; 	
-		char sendBuffer[MAX_SEND_BUFFER_SIZE];
+    std::thread t([&](std::string commandType){
+		try
+		{
+			IOTHUB_MESSAGE_HANDLE messageHandle; 	
+			char sendBuffer[MAX_SEND_BUFFER_SIZE];
 	
-		// fill send buffer	
-		sprintf_s(sendBuffer, MAX_SEND_BUFFER_SIZE, settings->Serialize().c_str());
-		messageHandle = IoTHubMessage_CreateFromByteArray((const unsigned char*)sendBuffer, strlen(sendBuffer));
-		
-		// set event properties	
-		MAP_HANDLE propMap = IoTHubMessage_Properties(messageHandle);
-		Map_AddOrUpdate(propMap, EventType::D2C_COMMAND.c_str(), CommandType::UPDATE_DASHBOARD_CONTROLS.c_str());
+			// fill send buffer	
+			sprintf_s(sendBuffer, MAX_SEND_BUFFER_SIZE, settings->Serialize().c_str());
+			messageHandle = IoTHubMessage_CreateFromByteArray((const unsigned char*)sendBuffer, strlen(sendBuffer));
+
+			// set event properties	
+			MAP_HANDLE propMap = IoTHubMessage_Properties(messageHandle);
+			Map_AddOrUpdate(propMap, EventType::D2C_COMMAND.c_str(), commandType.c_str());
+			
+			std::cout << "send message, size=" << strlen(sendBuffer) << std::endl;
+			std::cout << "CommandType: " << commandType << std::endl;
 	
-		std::cout << "send message, size=" << strlen(sendBuffer) << std::endl;
-	
-		// send the message
-		IoTHubClient_SendEventAsync(iotHubClientHandle, messageHandle, SendConfirmationCallback, this);
-	});
+			// send the message
+			IoTHubClient_SendEventAsync(iotHubClientHandle, messageHandle, SendConfirmationCallback, this);
+		}
+		catch(std::exception& e)
+		{
+			std::cout << e.what() << std::endl;	
+		}
+	}, cmdType);
 	
 	t.detach();
 }
@@ -367,6 +375,7 @@ IOTHUBMESSAGE_DISPOSITION_RESULT ReadyState::Start(Device* d)
 	StartCamera(d);
     std::cout << "+ Starting to run device!" << std::endl;
 	ChangeState(d, &Singleton<RunState>::Instance());
+	settings->setStateName("RunState");
 
 	return IOTHUBMESSAGE_ACCEPTED;
 }
@@ -386,6 +395,7 @@ IOTHUBMESSAGE_DISPOSITION_RESULT ReadyState::StartPreview(Device* d)
 	StartCamera(d);
     std::cout << "+ Starting to run device in preview mode!" << std::endl;
 	ChangeState(d, &Singleton<PreviewState>::Instance());
+	// TODO settings->setStateName("PreviewState");
 
 	return IOTHUBMESSAGE_ACCEPTED;
 }
@@ -416,7 +426,7 @@ IOTHUBMESSAGE_DISPOSITION_RESULT ReadyState::GetDeviceSettings(Device* d)
 	// ACK msg
 	std::cout << "+ Send DeviceSettings D2C message" << std::endl;
 
-	SendD2C_DeviceSettings(d);
+	SendD2C_DeviceSettings(d, CommandType::UPDATE_DASHBOARD_CONTROLS);
 	return IOTHUBMESSAGE_ACCEPTED;
 }
 
@@ -446,6 +456,7 @@ IOTHUBMESSAGE_DISPOSITION_RESULT RunState::Stop(Device* d)
 	StopCamera(d);
     std::cout << "+ Stop running the device and go back to ready!" << std::endl;
 	ChangeState(d, &Singleton<ReadyState>::Instance());
+	// TODO settings->setStateName("ReadyState");
 
 	return IOTHUBMESSAGE_ACCEPTED;
 }
@@ -477,7 +488,7 @@ IOTHUBMESSAGE_DISPOSITION_RESULT RunState::SetDeviceSettings(Device* d, std::str
 IOTHUBMESSAGE_DISPOSITION_RESULT RunState::GetDeviceSettings(Device* d)
 {
 	// ACK msg
-	SendD2C_DeviceSettings(d);
+	SendD2C_DeviceSettings(d, CommandType::UPDATE_DASHBOARD_CONTROLS);
 	std::cout << "+ Send DeviceSettings D2C message" << std::endl;
 
 	return IOTHUBMESSAGE_ACCEPTED;
@@ -525,6 +536,7 @@ IOTHUBMESSAGE_DISPOSITION_RESULT PreviewState::StopPreview(Device* d)
 	StopCamera(d);
     std::cout << "+ Stop running the preview and go back to ready!" << std::endl;
 	ChangeState(d, &Singleton<ReadyState>::Instance());
+	// TODO settings->setStateName("ReadyState");
 
 	return IOTHUBMESSAGE_ACCEPTED;
 }
@@ -545,7 +557,7 @@ IOTHUBMESSAGE_DISPOSITION_RESULT PreviewState::SetDeviceSettings(Device* d, std:
 IOTHUBMESSAGE_DISPOSITION_RESULT PreviewState::GetDeviceSettings(Device* d)
 {
 	// ACK msg
-	SendD2C_DeviceSettings(d);
+	SendD2C_DeviceSettings(d, CommandType::UPDATE_DASHBOARD_CONTROLS);
 	std::cout << "+ Send DeviceSettings D2C message" << std::endl;
 
 	return IOTHUBMESSAGE_ACCEPTED;

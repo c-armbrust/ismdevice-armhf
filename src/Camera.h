@@ -11,21 +11,29 @@
 #include <sys/mman.h>
 #include <string.h>
 #include <time.h>
+#include "was/storage_account.h"
+#include "was/blob.h"
+#include <cstdio>
+#include "PubSub.h"
 
-class Camera
+
+class Camera : public Publisher
 {
 public:
-	Camera();
+	Camera(utility::string_t, utility::string_t, std::string);
 	~Camera();
 
 	void Start();
 	void Stop();
 	void GetCameraInfo();
-	// TODO:
-	// setGain, setExposure ...
-	// (hope this stuff will work during a cam is running)	
+
+	// Pub Sub interface
+	void Attach(Subscriber*);
+	void Detach(Subscriber*);
+	void Notify();
 
 // get/set methods
+	inline std::string getCurrentCaptureUri(){return currentCaptureUri;} 
 	unsigned int getTriggerduration();
 	unsigned int getPulseduration();
 	unsigned int getPauseduration();
@@ -42,12 +50,21 @@ public:
 
 
 private:
+	void InitBlobStorage();
 	void InitPRU();
 	void InitCamera();
 	void HandleCaptures();
 	void terminate_on_error(HIDS);
+	void UploadCaptureToBlobStorage(std::string);
 
 private:
+	// Blob Storage
+	const utility::string_t storageConnectionString;
+	const utility::string_t containerName;
+	const std::string storageAccountName;
+	azure::storage::cloud_blob_container container;
+	std::string currentCaptureUri;
+	
 	// PRU
 	tpruss_intc_initdata pruss_intc_initdata;
 	unsigned int* pruDataMem;

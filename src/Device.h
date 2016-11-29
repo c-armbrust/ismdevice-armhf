@@ -19,10 +19,11 @@ class DeviceState;
 template<class T> class Singleton;
 class DeviceSettings;
 
-class Device
+class Device : public Subscriber
 {
 public:
 	Device();
+	~Device();
 	IOTHUBMESSAGE_DISPOSITION_RESULT Start();
 	IOTHUBMESSAGE_DISPOSITION_RESULT Stop();
 	IOTHUBMESSAGE_DISPOSITION_RESULT StartPreview();
@@ -30,7 +31,10 @@ public:
 	IOTHUBMESSAGE_DISPOSITION_RESULT SetDeviceSettings(std::string);
 	IOTHUBMESSAGE_DISPOSITION_RESULT GetDeviceSettings();
 	
-void ReceiveC2D();
+	void ReceiveC2D();
+	
+	// Pub Sub attach 
+	void SubscribeCameraNotifications();
 	
 
 private:
@@ -38,6 +42,7 @@ private:
 
 	void ChangeState(DeviceState*);
 	bool UpdateSettings(std::string);
+	void OnNotification(void*); // Pub Sub interface
 	std::string getDeviceId();
 	static IOTHUBMESSAGE_DISPOSITION_RESULT ReceiveMessageCallback(IOTHUB_MESSAGE_HANDLE, void*);
 	static void SendConfirmationCallback(IOTHUB_CLIENT_CONFIRMATION_RESULT, void*);

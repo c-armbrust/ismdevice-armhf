@@ -1,8 +1,13 @@
 #include "Camera.h"
 #include <iostream>
 
-Camera::Camera()
+Camera::Camera(utility::string_t stoconnstr, utility::string_t containername, std::string storageaccname) : storageConnectionString{stoconnstr}, containerName{containername}, storageAccountName{storageaccname}
 {
+	// Pub Sub vector of subscribers
+	subscribers = new std::list<Subscriber*>();
+
+	InitBlobStorage();
+
 	InitPRU();
 	
 //	fps = 2.0; // fps setzen macht nur im freilaufenden Modus Sinn
@@ -34,6 +39,27 @@ Camera::~Camera()
 
 
 
+// Pub Sub interface
+//
+void Camera::Attach(Subscriber* sub)
+{
+	subscribers->push_back(sub);	
+}
+
+void Camera::Detach(Subscriber* sub)
+{
+	subscribers->remove(sub);
+}
+
+void Camera::Notify()
+{
+	auto it = subscribers->begin();
+	for(; it != subscribers->end(); it++)
+		(*it)->OnNotification(this); // pass the changed subject (publisher) as param
+}
+
+
+
 void Camera::terminate_on_error(HIDS hCam)
 {
 	INT pErr; // Error code
@@ -44,6 +70,71 @@ void Camera::terminate_on_error(HIDS hCam)
 	std::cout<<"Text: "<<ppcErr<<std::endl;
 	is_ExitCamera(hCam);
 	exit(1);
+}
+
+
+
+void Camera::UploadCaptureToBlobStorage(std::string filename)
+{
+	// TODO:
+	// 0. Bei Trigger speichere Filename in eine Membervariable bzw. Ã¼bergib als Para
+	// 1. Lade hier Blob unter diesem Filename hoch	
+	// 2. Speichere Blob Uri in Membervariable
+	// 3. LÃsche File auf BBB
+	// 4. Signalisiere Device Ãber Observer Pattern nach dem upload, die Uri
+	// 
+	
+	try
+	{
+		// Retrieve reference to a blob named <filename>.
+		azure::storage::cloud_block_blob blockBlob = container.get_block_blob_reference(filename);
+	
+		// Create or overwrite the <filename> blob with contents from a local file.
+		blockBlob.upload_from_file(utility::string_t{filename});
+//		std::wcout << blockBlob.uri().primary_uri().to_string() << std::endl;
+
+		// Delete local file
+		std::remove(filename.c_str());
+
+		// TODO: Signalisiere Device per Observer Pattern die Uri 
+		currentCaptureUri = "https://" + storageAccountName + ".blob.core.windows.net/" + containerName + "/" + filename;
+		
+		// Notify all subscribers	
+		Notify();
+	}
+	catch(const std::exception& e)
+	{
+		std::wcout << U("Error: ") << e.what() << std::endl;	
+	}
+}
+
+
+
+void Camera::InitBlobStorage()
+{
+	try
+	{
+		// Retrieve storage account from connection string.
+		azure::storage::cloud_storage_account storage_account = azure::storage::cloud_storage_account::parse(storageConnectionString);
+
+		// Create the blob client
+		azure::storage::cloud_blob_client blob_client = storage_account.create_cloud_blob_client();
+
+		// Retrieve a reference to a container.
+		this->container = blob_client.get_container_reference(containerName);
+
+		// Create the container if it doesn't already exist.
+		container.create_if_not_exists();
+
+		// Make the blob container publicly accessible.
+		azure::storage::blob_container_permissions permissions;
+		permissions.set_public_access(azure::storage::blob_container_public_access_type::blob);
+		container.upload_permissions(permissions);
+	}
+	catch(const std::exception& e)
+	{
+		std::wcout << U("Error: ") << e.what() << std::endl;
+	}
 }
 
 
@@ -364,7 +455,8 @@ void Camera::HandleCaptures()
 			ImageFileParams.pnImageID = NULL;
 			ImageFileParams.ppcImageMem = NULL;
 
-			std::wstring filename = L"captures/image" + std::to_wstring(time(0)) + L".jpg";
+			// Captures are named "capture" + <timestamp> + ".jpg"
+			std::wstring filename = L"capture" + std::to_wstring(time(0)) + L".jpg";
 			ImageFileParams.pwchFileName = (wchar_t*)filename.c_str();
 			ImageFileParams.nFileType = IS_IMG_JPG;
 			ImageFileParams.nQuality = 80;
@@ -374,6 +466,9 @@ void Camera::HandleCaptures()
 				terminate_on_error(hCam);
 			}
 			std::wcout << L"Saved image to " << filename << std::endl;
+	
+			// Upload to Blob Storage
+			UploadCaptureToBlobStorage(std::string(filename.begin(), filename.end()));
 		}	
 	}
 }

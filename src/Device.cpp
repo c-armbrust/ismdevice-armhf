@@ -7,14 +7,23 @@
 #include <stdlib.h>
 #include "json.hpp"
 
-const char* Device::connectionString = "[connection string]";
+const char* Device::connectionString = "[iot hub connection string]";
+
+const utility::string_t storage_connection_string(U("[storage connection string]"));
+
+const std::string storage_acc_name = "[storage account name]";
+
+
+
+// use lower case letters only for container name
+const utility::string_t container_name(U("[container name]"));
 
 Device::Device()
 {
 	_state = &Singleton<ReadyState>::Instance();
 	platform_init();
 	iotHubClientHandle = IoTHubClient_CreateFromConnectionString(connectionString, AMQP_Protocol);
-	camera = new Camera();
+	camera = new Camera(storage_connection_string, container_name, storage_acc_name);
 	camera->GetCameraInfo();
 
 	settings = new DeviceSettings(this->getDeviceId(), _state->getStateName(), 5000, "", // std::string DeviceId, std::string StateName, int CapturePeriod, std::string CurrentCaptureUri
@@ -22,6 +31,30 @@ Device::Device()
 								  camera->getGain(), camera->getExposure(), // int Gain, double Exposure
 								  4, 0, 1000, 0); // int PulseWidth, int Current, int Predelay, bool IsOn
 }
+
+Device::~Device()
+{
+	// Pub Sub detach
+	camera->Detach(this);
+}
+
+
+
+// Pub Sub interface
+void Device::OnNotification(void* context)
+{
+	// Cast context to Camera* (only publisher at the moment, so no conditional statement required)
+	Camera* cam = (Camera*)context;
+	std::string currentCaptureUri = cam->getCurrentCaptureUri();
+	std::cout << "Camera notification: " << currentCaptureUri << std::endl;
+}
+
+void Device::SubscribeCameraNotifications()
+{
+	camera->Attach(this);
+}
+
+
 
 void Device::ChangeState(DeviceState* s)
 {

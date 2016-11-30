@@ -49,7 +49,7 @@ private:
 	void SendD2C_DeviceSettings(std::string);
 	void StartCamera();
 	void StopCamera();
-
+	void SetCameraPruValues();
 
 private:
 	DeviceState* _state;
@@ -148,7 +148,7 @@ public:
 	DeviceSettings(std::string, std::string, unsigned int, std::string, // general settings
 				   double, double, double, double, double,	   // Matlab Algorithm settings
 				   int, double,								   // camera settings
-				   unsigned int, int, unsigned int, bool);	   // pulse settings
+				   unsigned int, int, unsigned int);	   // pulse settings
 	DeviceSettings(DeviceSettings const&);
 	DeviceSettings& operator=(DeviceSettings const&);
 	~DeviceSettings();
@@ -174,7 +174,6 @@ public:
 	inline unsigned int getPulseWidth() {return PulseWidth;}
 	inline int getCurrent() {return Current;}
 	inline unsigned int getPredelay() {return Predelay;}
-	inline bool getIsOn() {return IsOn;}
 
 	inline void setDeviceId(std::string v) {DeviceId = v;}
 	inline void setStateName(std::string v) {StateName = v;}
@@ -190,7 +189,6 @@ public:
 	inline void setPulseWidth(unsigned int v) {PulseWidth = v;}
 	inline void setCurrent(int v) {Current = v;}
 	inline void setPredelay(unsigned int v) {Predelay = v;}
-	inline void setIsOn(int v) {IsOn = v;}
 
 private:
 	std::string DeviceId;
@@ -213,7 +211,6 @@ private:
 	unsigned int PulseWidth;
 	int Current;
 	unsigned int Predelay;
-	bool IsOn;
 };
 
 #endif

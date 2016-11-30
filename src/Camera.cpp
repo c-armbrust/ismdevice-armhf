@@ -80,6 +80,8 @@ void Camera::InitBlobStorage()
 {
 	try
 	{
+		std::cout << "Create Azure Storage container " << containerName << " on Storage Account " << storageAccountName << " if not exists" << std::endl;
+
 		// Retrieve storage account from connection string.
 		azure::storage::cloud_storage_account storage_account = azure::storage::cloud_storage_account::parse(storageConnectionString);
 

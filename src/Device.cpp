@@ -30,7 +30,7 @@ Device::Device()
 	settings = new DeviceSettings(this->getDeviceId(), _state->getStateName(), 5000, "", // std::string DeviceId, std::string StateName, int CapturePeriod, std::string CurrentCaptureUri
 								  0.0025, 8.5, 3.75, 4, 16, // double VarianceThreshold, double DistanceMapThreshold, double RGThreshold, double RestrictedFillingThreshold, double DilateValue
 								  camera->getGain(), camera->getExposure(), // int Gain, double Exposure
-								  4, 0, 1000, 0); // int PulseWidth, int Current, int Predelay, bool IsOn
+								  4, 0, 1000); // int PulseWidth, int Current, int Predelay
 }
 
 Device::~Device()
@@ -77,6 +77,7 @@ void Device::SubscribeNotifications()
 void Device::ChangeState(DeviceState* s)
 {
 	_state = s;
+	settings->setStateName(_state->getStateName());
 }
 
 bool Device::UpdateSettings(std::string msgbody)
@@ -86,6 +87,9 @@ bool Device::UpdateSettings(std::string msgbody)
 	settings->Deserialize(msgbody);
 	
 	// Update camera settings
+	//
+	SetCameraPruValues(); // Assertion: settings is updated before this call
+
 	if(camera->setGain(settings->getGain()) == false)
 		return false;
 	if(camera->setExposure(settings->getExposure()) == false)
@@ -110,51 +114,54 @@ std::string Device::getDeviceId()
 
 void Device::StartCamera()
 {
-	// 1. Translate  DeviceSettings --> Camera settings (trigger-, pulse-, pause-duration)
-	// 2. Set the camera settings
-	// 3. Start camera
-	//
-    // 1 instruction = 5ns
-	// 200 instructions = 1µs
-	// !!! 2 instructions per loop (divide your number by 2)	
-	//
-
-	// DeviceSettings.PulseWidth -> Camera.pulseduration
-	unsigned int pulseduration = settings->getPulseWidth();
-	pulseduration *= 200; 
-	pulseduration /= 2;
-	camera->setPulseduration(pulseduration);
-
-	// DeviceSettings.Predelay -> Camera.triggerduration
-	unsigned int triggerduration = settings->getPredelay();
-	triggerduration *= 200;
-	triggerduration /= 2;
-	camera->setTriggerduration(triggerduration);
-
-	// DeviceSettings.CapturePeriod -> Camera.pauseduration
-	unsigned int pauseduration = settings->getCapturePeriod();
-	pauseduration *= 1000; // ms to µs
-	pauseduration *= 200;
-	pauseduration /= 2;
-	pauseduration -= camera->getTriggerduration();
-	pauseduration -= camera->getPulseduration();
-	camera->setPauseduration(pauseduration);
-	
-	// print the values in hex (include <iomanip>)
-	std::stringstream stream;
-	stream << std::hex << camera->getPulseduration();
-	std::cout << "Set camera pulseduration to: " << stream.str() << " (hex)" << std::endl;
-	stream.str("");
-	stream.clear();
-	stream << std::hex << camera->getTriggerduration();
-	std::cout << "Set camera triggerduration to: " << stream.str() << " (hex)" << std::endl;
-	stream.str("");
-	stream.clear();
-	stream << std::hex << camera->getPauseduration();
-	std::cout << "Set camera pauseduration to: " << stream.str() << " (hex)" << std::endl;
-	
-
+	SetCameraPruValues();
 	camera->Start();
+}
+
+void Device::SetCameraPruValues()
+{
+    // 1. Translate  DeviceSettings --> Camera settings (trigger-, pulse-, pause-duration)
+    // 2. Set the camera settings
+    // 3. Start camera
+    //  
+    // 1 instruction = 5ns
+    // 200 instructions = 1µs 
+    // !!! 2 instructions per loop (divide your number by 2)    
+    //  
+
+    // DeviceSettings.PulseWidth -> Camera.pulseduration
+    unsigned int pulseduration = settings->getPulseWidth();
+    pulseduration *= 200; 
+    pulseduration /= 2;
+    camera->setPulseduration(pulseduration);
+
+    // DeviceSettings.Predelay -> Camera.triggerduration
+    unsigned int triggerduration = settings->getPredelay();
+    triggerduration *= 200;
+    triggerduration /= 2;
+    camera->setTriggerduration(triggerduration);
+
+    // DeviceSettings.CapturePeriod -> Camera.pauseduration
+    unsigned int pauseduration = settings->getCapturePeriod();
+    pauseduration *= 1000; // ms to µso
+    pauseduration *= 200;
+    pauseduration /= 2;
+    pauseduration -= camera->getTriggerduration();
+    pauseduration -= camera->getPulseduration();
+    camera->setPauseduration(pauseduration);
+    
+    // print the values in hex (include <iomanip>)
+    std::stringstream stream;
+    stream << std::hex << camera->getPulseduration();
+    std::cout << "Set camera pulseduration to: " << stream.str() << " (hex)" << std::endl;
+    stream.str("");
+    stream.clear();
+    stream << std::hex << camera->getTriggerduration();
+    std::cout << "Set camera triggerduration to: " << stream.str() << " (hex)" << std::endl;
+    stream.str("");
+    stream.clear();
+    stream << std::hex << camera->getPauseduration();
+    std::cout << "Set camera pauseduration to: " << stream.str() << " (hex)" << std::endl;	
 }
 
 void Device::StopCamera()
@@ -375,7 +382,6 @@ IOTHUBMESSAGE_DISPOSITION_RESULT ReadyState::Start(Device* d)
 	StartCamera(d);
     std::cout << "+ Starting to run device!" << std::endl;
 	ChangeState(d, &Singleton<RunState>::Instance());
-	settings->setStateName("RunState");
 
 	return IOTHUBMESSAGE_ACCEPTED;
 }
@@ -395,7 +401,6 @@ IOTHUBMESSAGE_DISPOSITION_RESULT ReadyState::StartPreview(Device* d)
 	StartCamera(d);
     std::cout << "+ Starting to run device in preview mode!" << std::endl;
 	ChangeState(d, &Singleton<PreviewState>::Instance());
-	// TODO settings->setStateName("PreviewState");
 
 	return IOTHUBMESSAGE_ACCEPTED;
 }
@@ -456,7 +461,6 @@ IOTHUBMESSAGE_DISPOSITION_RESULT RunState::Stop(Device* d)
 	StopCamera(d);
     std::cout << "+ Stop running the device and go back to ready!" << std::endl;
 	ChangeState(d, &Singleton<ReadyState>::Instance());
-	// TODO settings->setStateName("ReadyState");
 
 	return IOTHUBMESSAGE_ACCEPTED;
 }
@@ -536,7 +540,6 @@ IOTHUBMESSAGE_DISPOSITION_RESULT PreviewState::StopPreview(Device* d)
 	StopCamera(d);
     std::cout << "+ Stop running the preview and go back to ready!" << std::endl;
 	ChangeState(d, &Singleton<ReadyState>::Instance());
-	// TODO settings->setStateName("ReadyState");
 
 	return IOTHUBMESSAGE_ACCEPTED;
 }
@@ -575,7 +578,7 @@ DeviceSettings::DeviceSettings()
 DeviceSettings::DeviceSettings(std::string DeviceId, std::string StateName, unsigned int CapturePeriod, std::string CurrentCaptureUri, // general settings
 							   double VarianceThreshold, double DistanceMapThreshold, double RGThreshold, double RestrictedFillingThreshold, double DilateValue,     // Matlab Algorithm Settings
 							   int Gain, double Exposure, 								   // camera settings
-							   unsigned int PulseWidth, int Current, unsigned int Predelay, bool IsOn)        				   // pulse settings 
+							   unsigned int PulseWidth, int Current, unsigned int Predelay)        				   // pulse settings 
 {
 	this->DeviceId = DeviceId;
 	this->StateName = StateName;
@@ -591,7 +594,6 @@ DeviceSettings::DeviceSettings(std::string DeviceId, std::string StateName, unsi
 	this->PulseWidth = PulseWidth;
 	this->Current = Current;
 	this->Predelay = Predelay;
-	this->IsOn = IsOn;
 }
 
 DeviceSettings::~DeviceSettings()
@@ -614,8 +616,7 @@ std::string DeviceSettings::Serialize()
 		{"Exposure", Exposure},
 		{"PulseWidth", PulseWidth},
 		{"Current", Current},
-		{"Predelay", Predelay},
-		{"IsOn", IsOn}
+		{"Predelay", Predelay}
 	};
 	
 	return obj.dump();
@@ -638,7 +639,6 @@ void DeviceSettings::Deserialize(std::string jsonStr)
     PulseWidth = values["PulseWidth"];
     Current = values["Current"];
     Predelay = values["Predelay"];
-    IsOn = values["IsOn"];	
 }
 
 
@@ -658,6 +658,4 @@ void DeviceSettings::Report()
 	std::cout << "PulseWidth: " << PulseWidth << std::endl;
 	std::cout << "Current: " << Current << std::endl;
 	std::cout << "Predelay: " << Predelay << std::endl;
-	std::cout << "IsOn: " << IsOn << std::endl;
 }
-

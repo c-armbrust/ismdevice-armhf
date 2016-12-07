@@ -145,10 +145,10 @@ class  DeviceSettings
 {
 public:
 	DeviceSettings();
-	DeviceSettings(std::string, std::string, unsigned int, std::string, // general settings
+	DeviceSettings(std::string, std::string, int, std::string, // general settings
 				   double, double, double, double, double,	   // Matlab Algorithm settings
 				   int, double,								   // camera settings
-				   unsigned int, int, unsigned int);	   // pulse settings
+				   int, int, int);	   // pulse settings
 	DeviceSettings(DeviceSettings const&);
 	DeviceSettings& operator=(DeviceSettings const&);
 	~DeviceSettings();
@@ -162,7 +162,7 @@ public:
 public:
 	inline std::string getDeviceId() {return DeviceId;}
 	inline std::string getStateName() {return StateName;}
-	inline unsigned int getCapturePeriod() {return CapturePeriod;}
+	inline int getCapturePeriod() {return CapturePeriod;}
 	inline std::string getCurrentCaptureUri() {return CurrentCaptureUri;}
 	inline double getVarianceThreshold() {return VarianceThreshold;}
 	inline double getDistanceMapThreshold() {return DistanceMapThreshold;}
@@ -171,29 +171,29 @@ public:
 	inline double getDilateValue() {return DilateValue;}
 	inline int getGain() {return Gain;}
 	inline double getExposure() {return Exposure;}
-	inline unsigned int getPulseWidth() {return PulseWidth;}
+	inline int getPulseWidth() {return PulseWidth;}
 	inline int getCurrent() {return Current;}
-	inline unsigned int getPredelay() {return Predelay;}
+	inline int getPredelay() {return Predelay;}
 
 	inline void setDeviceId(std::string v) {DeviceId = v;}
 	inline void setStateName(std::string v) {StateName = v;}
-	inline void setCapturePeriod(unsigned int v) {CapturePeriod = v;}
+	inline void setCapturePeriod(int v) {CapturePeriod = v;}
 	inline void setCurrentCaptureUri(std::string v) {CurrentCaptureUri = v;}
 	inline void setVarianceThreshold(double v) {VarianceThreshold = v;}
 	inline void setDistanceMapThreshold(double v) {DistanceMapThreshold = v;}
 	inline void setRGThreshold(double v) {RGThreshold = v;}
 	inline void setRestrictedFillingThreshold(double v) {RestrictedFillingThreshold = v;}
 	inline void setDilateValue(double v) {DilateValue = v;}
-	inline void setGain(unsigned int v) {Gain = v;}
+	inline void setGain(int v) {Gain = v;}
 	inline void setExposure(double v) {Exposure = v;}
-	inline void setPulseWidth(unsigned int v) {PulseWidth = v;}
+	inline void setPulseWidth(int v) {PulseWidth = v;}
 	inline void setCurrent(int v) {Current = v;}
-	inline void setPredelay(unsigned int v) {Predelay = v;}
+	inline void setPredelay(int v) {Predelay = v;}
 
 private:
 	std::string DeviceId;
 	std::string StateName;
-	unsigned int CapturePeriod; 
+	int CapturePeriod; 
 	std::string CurrentCaptureUri;
 	
 	// Matlab Filament-Algorithm params
@@ -204,13 +204,13 @@ private:
 	double DilateValue;
 
 	// Camera Settings
-	unsigned int Gain;
+	int Gain;
 	double Exposure;
 
 	// Pulse Settings
-	unsigned int PulseWidth;
+	int PulseWidth;
 	int Current;
-	unsigned int Predelay;
+	int Predelay;
 };
 
 #endif

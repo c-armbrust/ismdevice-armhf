@@ -14,8 +14,6 @@ const utility::string_t storage_connection_string(U(""));
 
 const std::string storage_acc_name = "";
 
-
-
 // use lower case letters only for container name
 const utility::string_t container_name(U(""));
 
@@ -130,19 +128,19 @@ void Device::SetCameraPruValues()
     //  
 
     // DeviceSettings.PulseWidth -> Camera.pulseduration
-    unsigned int pulseduration = settings->getPulseWidth();
+    unsigned int pulseduration = (unsigned int)settings->getPulseWidth();
     pulseduration *= 200; 
     pulseduration /= 2;
     camera->setPulseduration(pulseduration);
 
     // DeviceSettings.Predelay -> Camera.triggerduration
-    unsigned int triggerduration = settings->getPredelay();
+    unsigned int triggerduration = (unsigned int)settings->getPredelay();
     triggerduration *= 200;
     triggerduration /= 2;
     camera->setTriggerduration(triggerduration);
 
     // DeviceSettings.CapturePeriod -> Camera.pauseduration
-    unsigned int pauseduration = settings->getCapturePeriod();
+    unsigned int pauseduration = (unsigned int)settings->getCapturePeriod();
     pauseduration *= 1000; // ms to µso
     pauseduration *= 200;
     pauseduration /= 2;
@@ -575,10 +573,10 @@ DeviceSettings::DeviceSettings()
 
 }
 
-DeviceSettings::DeviceSettings(std::string DeviceId, std::string StateName, unsigned int CapturePeriod, std::string CurrentCaptureUri, // general settings
+DeviceSettings::DeviceSettings(std::string DeviceId, std::string StateName, int CapturePeriod, std::string CurrentCaptureUri, // general settings
 							   double VarianceThreshold, double DistanceMapThreshold, double RGThreshold, double RestrictedFillingThreshold, double DilateValue,     // Matlab Algorithm Settings
 							   int Gain, double Exposure, 								   // camera settings
-							   unsigned int PulseWidth, int Current, unsigned int Predelay)        				   // pulse settings 
+							   int PulseWidth, int Current, int Predelay)        				   // pulse settings 
 {
 	this->DeviceId = DeviceId;
 	this->StateName = StateName;
@@ -624,21 +622,30 @@ std::string DeviceSettings::Serialize()
 
 void DeviceSettings::Deserialize(std::string jsonStr)
 {
-	nlohmann::json values  = nlohmann::json::parse(jsonStr);
-	DeviceId = values["DeviceId"];
-    StateName = values["StateName"];
-    CapturePeriod = values["CapturePeriod"];
-    CurrentCaptureUri = values["CurrentCaptureUri"];
-    VarianceThreshold = values["VarianceThreshold"];
-    DistanceMapThreshold = values["DistanceMapThreshold"];
-    RGThreshold = values["RGThreshold"];
-    RestrictedFillingThreshold = values["RestrictedFillingThreshold"];
-    DilateValue = values["DilateValue"];
-  	Gain = values["Gain"];
-    Exposure = values["Exposure"];
-    PulseWidth = values["PulseWidth"];
-    Current = values["Current"];
-    Predelay = values["Predelay"];
+	try
+	{
+		nlohmann::json values  = nlohmann::json::parse(jsonStr);
+
+		DeviceId = values["DeviceId"];
+    	StateName = values["StateName"];
+		CapturePeriod = values["CapturePeriod"];
+		CurrentCaptureUri = values["CurrentCaptureUri"];
+		VarianceThreshold = values["VarianceThreshold"];
+		DistanceMapThreshold = values["DistanceMapThreshold"];
+		RGThreshold = values["RGThreshold"];
+		RestrictedFillingThreshold = values["RestrictedFillingThreshold"];
+		DilateValue = values["DilateValue"];
+		Gain = values["Gain"];
+		Exposure = values["Exposure"];
+		PulseWidth = values["PulseWidth"];
+		Current = values["Current"];
+		Predelay = values["Predelay"];
+	}
+	catch(std::exception& e)
+	{
+		std::cout << "Error on DeviceSettings deserialization" << std::endl;
+		std::cout << e.what() << std::endl;
+	}
 }
 
 
@@ -658,4 +665,4 @@ void DeviceSettings::Report()
 	std::cout << "PulseWidth: " << PulseWidth << std::endl;
 	std::cout << "Current: " << Current << std::endl;
 	std::cout << "Predelay: " << Predelay << std::endl;
-}
+

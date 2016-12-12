@@ -30,9 +30,13 @@ The following paths may differ on your system. The Makefile assumes that their c
 
 # Azure Storage & C++ REST
 (libazurestorage.so, libazurestorage.so.2, libazurestorage.so.2.5)
+(cp the libazurestorage.so.2.5 and create with ln -s:
+libazurestorage.so.2 -> libazurestorage.so.2.5 and libazurestorage.so -> libazurestorage.so.2)
 /home/debian/azure-storage-cpp/Microsoft.WindowsAzure.Storage/build.debug/Binaries
 
 (libcpprest.so, libcpprest.so.2.9)
+(copy the libcpprest.so.2.9 and create with ln -s:
+libcpprest.so -> libcpprest.so.2.9)
 /home/debian/casablanca/Release/build.debug/Binaries
 
 # service code

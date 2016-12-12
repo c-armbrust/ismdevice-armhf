@@ -665,4 +665,4 @@ void DeviceSettings::Report()
 	std::cout << "PulseWidth: " << PulseWidth << std::endl;
 	std::cout << "Current: " << Current << std::endl;
 	std::cout << "Predelay: " << Predelay << std::endl;
-
+}

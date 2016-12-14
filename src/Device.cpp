@@ -29,7 +29,7 @@ Device::Device()
 	DeviceCrypto_Decrypt((char*)"connectionstring", &connections, &clen);
 	connectionString = (char*)connections;
 	// TODO: storage connection string, storage account name, container name
-	
+
 	_state = &Singleton<ReadyState>::Instance();
 	platform_init();
 	iotHubClientHandle = IoTHubClient_CreateFromConnectionString(connectionString, AMQP_Protocol);
@@ -676,3 +676,4 @@ void DeviceSettings::Report()
 	std::cout << "PulseWidth: " << PulseWidth << std::endl;
 	std::cout << "Current: " << Current << std::endl;
 	std::cout << "Predelay: " << Predelay << std::endl;
+}

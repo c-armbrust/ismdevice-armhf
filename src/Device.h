@@ -30,12 +30,12 @@ public:
 	IOTHUBMESSAGE_DISPOSITION_RESULT StopPreview();
 	IOTHUBMESSAGE_DISPOSITION_RESULT SetDeviceSettings(std::string);
 	IOTHUBMESSAGE_DISPOSITION_RESULT GetDeviceSettings();
-	
+
 	void ReceiveC2D();
-	
+
 	// Pub Sub attach (not possible in ctor because this ptr is required)
 	void SubscribeNotifications();
-	
+
 
 private:
 	friend class DeviceState;
@@ -94,7 +94,7 @@ public:
 	virtual std::string getStateName();
 
 private:
-	template<class T> friend class Singleton;	
+	template<class T> friend class Singleton;
 	ReadyState(); // ctor hidden
 	~ReadyState(); // dtor hidden
 	ReadyState(ReadyState const&); // cp ctor hidden
@@ -102,14 +102,14 @@ private:
 };
 
 class RunState : public DeviceState
-{ 
-public:  
+{
+public:
     virtual IOTHUBMESSAGE_DISPOSITION_RESULT Start(Device*);
-    virtual IOTHUBMESSAGE_DISPOSITION_RESULT Stop(Device*);                                     
+    virtual IOTHUBMESSAGE_DISPOSITION_RESULT Stop(Device*);
     virtual IOTHUBMESSAGE_DISPOSITION_RESULT StartPreview(Device*);
-    virtual IOTHUBMESSAGE_DISPOSITION_RESULT StopPreview(Device*);                                
+    virtual IOTHUBMESSAGE_DISPOSITION_RESULT StopPreview(Device*);
     virtual IOTHUBMESSAGE_DISPOSITION_RESULT SetDeviceSettings(Device*, std::string);
-	virtual IOTHUBMESSAGE_DISPOSITION_RESULT GetDeviceSettings(Device*);	
+	virtual IOTHUBMESSAGE_DISPOSITION_RESULT GetDeviceSettings(Device*);
 	virtual std::string getStateName();
 
 private:
@@ -121,12 +121,12 @@ private:
 };
 
 class PreviewState : public DeviceState
-{ 
-public:  
+{
+public:
     virtual IOTHUBMESSAGE_DISPOSITION_RESULT Start(Device*);
-    virtual IOTHUBMESSAGE_DISPOSITION_RESULT Stop(Device*);                                       
+    virtual IOTHUBMESSAGE_DISPOSITION_RESULT Stop(Device*);
     virtual IOTHUBMESSAGE_DISPOSITION_RESULT StartPreview(Device*);
-    virtual IOTHUBMESSAGE_DISPOSITION_RESULT StopPreview(Device*);                             
+    virtual IOTHUBMESSAGE_DISPOSITION_RESULT StopPreview(Device*);
     virtual IOTHUBMESSAGE_DISPOSITION_RESULT SetDeviceSettings(Device*, std::string);
 	virtual IOTHUBMESSAGE_DISPOSITION_RESULT GetDeviceSettings(Device*);
 	virtual std::string getStateName();
@@ -193,9 +193,9 @@ public:
 private:
 	std::string DeviceId;
 	std::string StateName;
-	int CapturePeriod; 
+	int CapturePeriod;
 	std::string CurrentCaptureUri;
-	
+
 	// Matlab Filament-Algorithm params
 	double VarianceThreshold;
 	double DistanceMapThreshold;

@@ -6,7 +6,7 @@ Camera::Camera(utility::string_t stoconnstr, utility::string_t containername, st
 	InitBlobStorage();
 
 	InitPRU();
-	
+
 //	fps = 2.0; // fps setzen macht nur im freilaufenden Modus Sinn
 	exposure = 200.0;
 	gain = 30;
@@ -25,7 +25,7 @@ Camera::~Camera()
 	if(is_FreeImageMem(hCam, imageMem, imageMemID) != IS_SUCCESS){
 		std::cout<<"Free image memory error\n";
 		terminate_on_error(hCam);
-	}	
+	}
 	free(imageMem);
 
 	if(is_ExitCamera(hCam) != IS_SUCCESS){
@@ -35,7 +35,7 @@ Camera::~Camera()
 }
 
 void Camera::terminate_on_error(HIDS hCam)
-{	
+{
 	INT pErr; // Error code
 	IS_CHAR* ppcErr; // Error text
 	is_GetError(hCam, &pErr, &ppcErr);
@@ -53,7 +53,7 @@ void Camera::UploadCaptureToBlobStorage(std::string filename)
 	{
 		// Retrieve reference to a blob named <filename>.
 		azure::storage::cloud_block_blob blockBlob = container.get_block_blob_reference(filename);
-	
+
 		// Create or overwrite the <filename> blob with contents from a local file.
 		blockBlob.upload_from_file(utility::string_t{filename});
 
@@ -61,16 +61,16 @@ void Camera::UploadCaptureToBlobStorage(std::string filename)
 		std::remove(filename.c_str());
 
 		std::string uri = "https://" + storageAccountName + ".blob.core.windows.net/" + containerName + "/" + filename;
-		
+
 		// Set CaptureNotification
 		CaptureNotification notification(uri);
 		NewCaptureUploaded.SetNotification(&notification);
-		// Notify all subscribers	
+		// Notify all subscribers
 		NewCaptureUploaded.Notify();
 	}
 	catch(const std::exception& e)
 	{
-		std::wcout << U("Error: ") << e.what() << std::endl;	
+		std::wcout << U("Error: ") << e.what() << std::endl;
 	}
 }
 
@@ -113,14 +113,14 @@ void Camera::InitCamera()
 	if(is_InitCamera(&hCam, NULL) != IS_SUCCESS){
 		std::cout<<"Init camera error\n";
 		terminate_on_error(hCam);
-	} 
-	
+	}
+
 	// Set Bitmap-Mode (store digital image in system memory)
 	if(is_SetDisplayMode(hCam, IS_SET_DM_DIB) != IS_SUCCESS){
 		std::cout<<"Set display mode error\n";
 		terminate_on_error(hCam);
 	}
-	
+
 	// is_AllocImageMem
 	char* ppcImgMem; // Pointer to image memory
 	int pid; // ID for image memory
@@ -131,11 +131,11 @@ void Camera::InitCamera()
 
 	// Calculate image buffer size
 	// Calculate line increment
-	const int line = sizeX * int((bitsPerPixel + 7) / 8); 
+	const int line = sizeX * int((bitsPerPixel + 7) / 8);
 	const int adjust = line % 4 == 0 ? 0 : 4 - line % 4;
 	// adjust is 0 if line mod 4 eq 0, rest(line / 4) else.
 	const int lineinc = line + adjust;
-	const int BufferSize = ( sizeX * int((bitsPerPixel + 7) / 8) + adjust) * sizeY;	
+	const int BufferSize = ( sizeX * int((bitsPerPixel + 7) / 8) + adjust) * sizeY;
 	std::cout << "BufferSize = " << BufferSize << " Byte\n";
 
 	// is_SetAllocatedImageMem
@@ -178,7 +178,7 @@ void Camera::InitCamera()
 		std::cout<<"Set pixel clock error:\n";
 		terminate_on_error(hCam);
 	}
-    
+
 	// Get current pixel clock
     UINT nPixelClock;
     if(is_PixelClock(hCam, IS_PIXELCLOCK_CMD_GET, (void*)&nPixelClock, sizeof(nPixelClock)) != IS_SUCCESS) {
@@ -190,7 +190,7 @@ void Camera::InitCamera()
         pixelclock = nPixelClock; // set the member variable
     }
 
-	// FPS 
+	// FPS
 	// FPS_min = 1/max
 	// FPS_max = 1/min
 	// FPS_n = 1/(min+n*Interval)
@@ -206,7 +206,7 @@ void Camera::InitCamera()
 	}
 
 	// Set framerate
-	double newFPS; 
+	double newFPS;
 	if(is_SetFrameRate(hCam, IS_GET_FRAMERATE, &newFPS) != IS_SUCCESS){
 		std::cout<<"Set framerate error\n";
 		terminate_on_error(hCam);
@@ -241,11 +241,11 @@ void Camera::InitCamera()
 		std::cout << "Get exposure range infos error\n";
 		terminate_on_error(hCam);
 	}
-	
+
 	std::cout << "Min exposure: " << ExposureRange[0] << " ms" << std::endl;
 	std::cout << "Max exposure: " << ExposureRange[1] << " ms" << std::endl;
 	std::cout << "Exposure increment: " << ExposureRange[2] << " ms" << std::endl;
-	
+
 	// Set min exposure time
 	std::cout << "Set exposure to " << exposure << " ms\n";
 	if(is_Exposure(hCam, IS_EXPOSURE_CMD_SET_EXPOSURE, (void*)&exposure, sizeof(exposure)) != IS_SUCCESS){
@@ -289,7 +289,7 @@ void Camera::InitCamera()
 	// Enable FRAME-Event
 	is_EnableEvent(hCam, IS_SET_EVENT_FRAME);
 
-	std::cout << "Set continious trigger mode\n";	
+	std::cout << "Set continious trigger mode\n";
 	// Continious trigger mode
 	if(is_CaptureVideo(hCam, IS_WAIT) != IS_SUCCESS){
 		std::cout << "is_CaptureVideo error:\n";
@@ -314,8 +314,8 @@ void Camera::GetCameraInfo()
 	std::cout << "Systemdatum des Endtests: " << pInfo.Date << std::endl;
 	std::cout << "Kamera-ID: " << (int)pInfo.Select << std::endl; // Ab Werk steht die Kamera-ID auf 1. Kann mit is_SetCameraID geaendert werden
 	if(pInfo.Type == IS_CAMERA_TYPE_UEYE_USB_SE)
-		std::cout << "Kameratyp: USB uEye SE" << std::endl; 
-	std::cout << std::endl;  
+		std::cout << "Kameratyp: USB uEye SE" << std::endl;
+	std::cout << std::endl;
 
 	std::cout << "ueye API Info\n";
 	std::cout << "--------------------\n";
@@ -418,8 +418,8 @@ void Camera::HandleCaptures()
 			// Save image to file
 			// Save jpeg from active memory with quality 80 (without file open dialog)
 			IMAGE_FILE_PARAMS ImageFileParams;
-	
-			// pnImageID and ppcImageMem equals NULL -> use the image in the active image memory 
+
+			// pnImageID and ppcImageMem equals NULL -> use the image in the active image memory
 			ImageFileParams.pnImageID = NULL;
 			ImageFileParams.ppcImageMem = NULL;
 
@@ -434,10 +434,10 @@ void Camera::HandleCaptures()
 				terminate_on_error(hCam);
 			}
 			std::wcout << L"Saved image to " << filename << std::endl;
-	
+
 			// Upload to Blob Storage
 			UploadCaptureToBlobStorage(std::string(filename.begin(), filename.end()));
-		}	
+		}
 	}
 }
 
@@ -453,7 +453,7 @@ void Camera::setTriggerduration(unsigned int v)
 	triggerduration = v;
 
 	// Write a byte into PRU0 Data RAM0. Offset = 0 Bytes, Data Bytes = 4
-	pruDataMem[0] = triggerduration;	
+	pruDataMem[0] = triggerduration;
 }
 
 void Camera::setPulseduration(unsigned int v)
@@ -462,7 +462,7 @@ void Camera::setPulseduration(unsigned int v)
 
     // Write a byte into PRU0 Data RAM0. Offset = 4 Bytes, Data Bytes = 4
 	pruDataMem[1] = pulseduration;
-	
+
 }
 
 void Camera::setPauseduration(unsigned int v)
@@ -475,28 +475,28 @@ void Camera::setPauseduration(unsigned int v)
 
 
 
-unsigned int Camera::getPixelclock() 
-{ 
+unsigned int Camera::getPixelclock()
+{
 	if(is_PixelClock(hCam, IS_PIXELCLOCK_CMD_GET, (void*)&pixelclock, sizeof(pixelclock)) != IS_SUCCESS) {
 		std::cout<<"Get pixel clock error\n";
 		terminate_on_error(hCam);
 	}
-	return pixelclock; 
+	return pixelclock;
 }
 
-double Camera::getExposure() 
-{ 
+double Camera::getExposure()
+{
 	if(is_Exposure(hCam, IS_EXPOSURE_CMD_GET_EXPOSURE, (void*)&exposure, sizeof(exposure)) != IS_SUCCESS){
 		std::cout << "Get current exposure error\n";
 		terminate_on_error(hCam);
 	}
-	return exposure; 
+	return exposure;
 }
 
-unsigned int Camera::getGain() 
-{ 
+unsigned int Camera::getGain()
+{
 	gain = is_SetHardwareGain(hCam, IS_GET_MASTER_GAIN, 0, 0, 0);
-	return gain; 
+	return gain;
 }
 
 double Camera::getFps()
@@ -505,17 +505,17 @@ double Camera::getFps()
 	if(is_GetFramesPerSecond(hCam, &fps) != IS_SUCCESS){
 		std::cout<<"Get FPS error\n";
 		terminate_on_error(hCam);
-	} 
+	}
 	return fps;
 }
 
-bool Camera::setPixelclock(unsigned int v) 
+bool Camera::setPixelclock(unsigned int v)
 {
     if(is_PixelClock(hCam, IS_PIXELCLOCK_CMD_SET, (void*)&v, sizeof(v)) != IS_SUCCESS) {
 		std::cout<<"Set pixel clock error:\n";
 		//terminate_on_error(hCam);
 		return false;
-	}	
+	}
 	return true;
 }
 

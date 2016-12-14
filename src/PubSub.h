@@ -24,7 +24,7 @@ public:
 	virtual void SetNotification(Notification*) = 0;
 protected:
 	std::list<Subscriber*> subscribers;
-	Notification* notification; 
+	Notification* notification;
 };
 
 class Subscriber

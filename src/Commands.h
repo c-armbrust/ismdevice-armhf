@@ -17,17 +17,17 @@ public:
 	// Device identity registry Commands
 	static const  std::string UNPROVISION;
 	static const std::string PROVISION;
-	
+
 	// C2D Commands
 	static const std::string START;
 	static const std::string STOP;
 	static const std::string START_PREVIEW;
 	static const std::string STOP_PREVIEW;
-	
+
 	// C2D Dashboard Commands
 	static const std::string GET_DEVICE_SETTINGS;
 	static const std::string SET_DEVICE_SETTINGS;
-	
+
 	// D2C Commands
 	/* Obsolete. Use CAPTURE_UPLOADED and look at the StateName field
 	 * RunState -> DAT
@@ -38,7 +38,7 @@ public:
 	*/
 	static const std::string CAPTURE_UPLOADED;
 
-	// D2C Dashboard Commands 
+	// D2C Dashboard Commands
 	static const std::string UPDATE_DASHBOARD_CONTROLS;
 };
 

@@ -44,15 +44,15 @@ void Device::OnNotification(Publisher* context)
 {
 	// Use RTTI (run-time type information) mechanism of C++ to cast in the correct concrete notification type
 	// http://stackoverflow.com/questions/351845/finding-the-type-of-an-object-in-c
-	
+
 	Notification* notification = context->GetNotification();
 
 	if(dynamic_cast<CaptureNotification*>(notification) != nullptr)
 	{
 		std::string uri = dynamic_cast<CaptureNotification*>(notification)->CurrentCaptureUri;
 		std::cout << "Camera notification: " << uri << std::endl;
-		
-		// Update settings with new current capture uri and send them as D2C message 
+
+		// Update settings with new current capture uri and send them as D2C message
 		settings->setCurrentCaptureUri(uri);
 		SendD2C_DeviceSettings(CommandType::CAPTURE_UPLOADED);
 	}
@@ -83,7 +83,7 @@ bool Device::UpdateSettings(std::string msgbody)
 	std::cout << "\nold settings:" << std::endl;
 	settings->Report();
 	settings->Deserialize(msgbody);
-	
+
 	// Update camera settings
 	//
 	SetCameraPruValues(); // Assertion: settings is updated before this call
@@ -121,15 +121,15 @@ void Device::SetCameraPruValues()
     // 1. Translate  DeviceSettings --> Camera settings (trigger-, pulse-, pause-duration)
     // 2. Set the camera settings
     // 3. Start camera
-    //  
+    //
     // 1 instruction = 5ns
-    // 200 instructions = 1µs 
-    // !!! 2 instructions per loop (divide your number by 2)    
-    //  
+    // 200 instructions = 1µs
+    // !!! 2 instructions per loop (divide your number by 2)
+    //
 
     // DeviceSettings.PulseWidth -> Camera.pulseduration
     unsigned int pulseduration = (unsigned int)settings->getPulseWidth();
-    pulseduration *= 200; 
+    pulseduration *= 200;
     pulseduration /= 2;
     camera->setPulseduration(pulseduration);
 
@@ -147,7 +147,7 @@ void Device::SetCameraPruValues()
     pauseduration -= camera->getTriggerduration();
     pauseduration -= camera->getPulseduration();
     camera->setPauseduration(pauseduration);
-    
+
     // print the values in hex (include <iomanip>)
     std::stringstream stream;
     stream << std::hex << camera->getPulseduration();
@@ -159,7 +159,7 @@ void Device::SetCameraPruValues()
     stream.str("");
     stream.clear();
     stream << std::hex << camera->getPauseduration();
-    std::cout << "Set camera pauseduration to: " << stream.str() << " (hex)" << std::endl;	
+    std::cout << "Set camera pauseduration to: " << stream.str() << " (hex)" << std::endl;
 }
 
 void Device::StopCamera()
@@ -208,7 +208,7 @@ IOTHUBMESSAGE_DISPOSITION_RESULT DeviceState::GetDeviceSettings(Device*){}
 
 
 
-// DeviceState -> Device interface  
+// DeviceState -> Device interface
 //
 void DeviceState::ChangeState(Device* d, DeviceState* s)
 {
@@ -217,7 +217,7 @@ void DeviceState::ChangeState(Device* d, DeviceState* s)
 
 bool DeviceState::UpdateSettings(Device* d, std::string msgbody)
 {
-	return d->UpdateSettings(msgbody);	
+	return d->UpdateSettings(msgbody);
 }
 
 void DeviceState::SendD2C_DeviceSettings(Device* d, std::string cmdType)
@@ -240,9 +240,9 @@ void DeviceState::StopCamera(Device* d)
 void Device::ReceiveC2D()
 {
 	IoTHubClient_SetMessageCallback(iotHubClientHandle, ReceiveMessageCallback, this);
-	
+
 	while(1)
-    {   
+    {
         ThreadAPI_Sleep(1000);
     }
 }
@@ -254,29 +254,29 @@ void Device::SendD2C_DeviceSettings(std::string cmdType)
     std::thread t([&](std::string commandType){
 		try
 		{
-			IOTHUB_MESSAGE_HANDLE messageHandle; 	
+			IOTHUB_MESSAGE_HANDLE messageHandle;
 			char sendBuffer[MAX_SEND_BUFFER_SIZE];
-	
-			// fill send buffer	
+
+			// fill send buffer
 			sprintf_s(sendBuffer, MAX_SEND_BUFFER_SIZE, settings->Serialize().c_str());
 			messageHandle = IoTHubMessage_CreateFromByteArray((const unsigned char*)sendBuffer, strlen(sendBuffer));
 
-			// set event properties	
+			// set event properties
 			MAP_HANDLE propMap = IoTHubMessage_Properties(messageHandle);
 			Map_AddOrUpdate(propMap, EventType::D2C_COMMAND.c_str(), commandType.c_str());
-			
+
 			std::cout << "send message, size=" << strlen(sendBuffer) << std::endl;
 			std::cout << "CommandType: " << commandType << std::endl;
-	
+
 			// send the message
 			IoTHubClient_SendEventAsync(iotHubClientHandle, messageHandle, SendConfirmationCallback, this);
 		}
 		catch(std::exception& e)
 		{
-			std::cout << e.what() << std::endl;	
+			std::cout << e.what() << std::endl;
 		}
 	}, cmdType);
-	
+
 	t.detach();
 }
 
@@ -284,7 +284,7 @@ void Device::SendD2C_DeviceSettings(std::string cmdType)
 void Device::SendConfirmationCallback(IOTHUB_CLIENT_CONFIRMATION_RESULT result, void* userContextCallback)
 {
 	//Device* d = (Device*)userContextCallback;
-	
+
 	std::cout << "send confirmed." << std::endl;
 }
 
@@ -309,7 +309,7 @@ IOTHUBMESSAGE_DISPOSITION_RESULT Device::ReceiveMessageCallback(IOTHUB_MESSAGE_H
             {
                 for(size_t index = 0; index < propertyCount; index++)
                 {
-					// Filter all iot hub events on a high level. 
+					// Filter all iot hub events on a high level.
 					// Handle only events with key EventType::C2D_COMMAND
                     if(std::string{keys[index]} == EventType::C2D_COMMAND)
                     {
@@ -318,9 +318,9 @@ IOTHUBMESSAGE_DISPOSITION_RESULT Device::ReceiveMessageCallback(IOTHUB_MESSAGE_H
     					size_t size;
     					if (IoTHubMessage_GetByteArray(message, (const unsigned char**)&buffer, &size) == IOTHUB_MESSAGE_OK)
     					{
-							// !!! provide the exact size to std::string ctor 
+							// !!! provide the exact size to std::string ctor
         					std::string msgbody{buffer, 0, size};
-	
+
 							// Switched by CommandType::<command> delegate to _state how to handle the command
                         	std::string cmd{values[index]};
                         	if(cmd == CommandType::START)
@@ -345,11 +345,11 @@ IOTHUBMESSAGE_DISPOSITION_RESULT Device::ReceiveMessageCallback(IOTHUB_MESSAGE_H
                         	}
                         	else if(cmd == CommandType::GET_DEVICE_SETTINGS)
                     	    {
-              	              	return d->GetDeviceSettings(); 
+              	              	return d->GetDeviceSettings();
             	            }
         	                else
     	                    {
-								std::cout << "- Unknown CommandType" << std::endl;	
+								std::cout << "- Unknown CommandType" << std::endl;
                         	}
 						}
                     }
@@ -358,7 +358,7 @@ IOTHUBMESSAGE_DISPOSITION_RESULT Device::ReceiveMessageCallback(IOTHUB_MESSAGE_H
         }
     }
 
-	std::cout << "ReceiveMessageCallback returns with default IOTHUBMESSAGE_REJECTED." << std::endl;	
+	std::cout << "ReceiveMessageCallback returns with default IOTHUBMESSAGE_REJECTED." << std::endl;
 	return IOTHUBMESSAGE_REJECTED;
 }
 
@@ -407,7 +407,7 @@ IOTHUBMESSAGE_DISPOSITION_RESULT ReadyState::StopPreview(Device* d)
 {
     // NAK msg
     std::cout << "- Device is not running!" << std::endl;
-	
+
 	return IOTHUBMESSAGE_REJECTED;
 }
 
@@ -417,7 +417,7 @@ IOTHUBMESSAGE_DISPOSITION_RESULT ReadyState::SetDeviceSettings(Device* d, std::s
     // set new DeviceSettings values
     // ACK msg
     std::cout << "+ READY_STATE: Set new DeviceSettings values!" << std::endl;
-	
+
 	if(UpdateSettings(d, msgbody) == true)
 		return IOTHUBMESSAGE_ACCEPTED;
 	else
@@ -527,7 +527,7 @@ IOTHUBMESSAGE_DISPOSITION_RESULT PreviewState::StartPreview(Device* d)
 {
     // NAK msg
     std::cout << "- Device is already running in preview mode!" << std::endl;
-	
+
 	return IOTHUBMESSAGE_REJECTED;
 }
 
@@ -576,7 +576,7 @@ DeviceSettings::DeviceSettings()
 DeviceSettings::DeviceSettings(std::string DeviceId, std::string StateName, int CapturePeriod, std::string CurrentCaptureUri, // general settings
 							   double VarianceThreshold, double DistanceMapThreshold, double RGThreshold, double RestrictedFillingThreshold, double DilateValue,     // Matlab Algorithm Settings
 							   int Gain, double Exposure, 								   // camera settings
-							   int PulseWidth, int Current, int Predelay)        				   // pulse settings 
+							   int PulseWidth, int Current, int Predelay)        				   // pulse settings
 {
 	this->DeviceId = DeviceId;
 	this->StateName = StateName;
@@ -610,13 +610,13 @@ std::string DeviceSettings::Serialize()
 		{"RGThreshold", RGThreshold},
 		{"RestrictedFillingThreshold", RestrictedFillingThreshold},
 		{"DilateValue", DilateValue},
-		{"Gain", Gain},	
+		{"Gain", Gain},
 		{"Exposure", Exposure},
 		{"PulseWidth", PulseWidth},
 		{"Current", Current},
 		{"Predelay", Predelay}
 	};
-	
+
 	return obj.dump();
 }
 
@@ -665,4 +665,3 @@ void DeviceSettings::Report()
 	std::cout << "PulseWidth: " << PulseWidth << std::endl;
 	std::cout << "Current: " << Current << std::endl;
 	std::cout << "Predelay: " << Predelay << std::endl;
-

@@ -34,7 +34,7 @@ public:
 	unsigned int getPixelclock();
 	double getExposure();
 	unsigned int getGain();
-	double getFps(); 
+	double getFps();
 	void setTriggerduration(unsigned int);
 	void setPulseduration(unsigned int);
 	void setPauseduration(unsigned int);
@@ -59,7 +59,7 @@ private:
 	const utility::string_t containerName;
 	const std::string storageAccountName;
 	azure::storage::cloud_blob_container container;
-	
+
 	// PRU
 	tpruss_intc_initdata pruss_intc_initdata;
 	unsigned int* pruDataMem;
@@ -68,16 +68,16 @@ private:
 	unsigned int pauseduration;
 
 	// IDS cam
-	HIDS hCam;    
-	const int sizeX = 640;	
+	HIDS hCam;
+	const int sizeX = 640;
 	const int sizeY = 480;
 	const int bitsPerPixel = 8;
-	double fps; 
+	double fps;
 	double FpsRange[3]; // min, max, interval (fps_min = 1/max; fps_max = 1/min; fps_n = 1/(min+n*interval))
 
-	unsigned int pixelclock; 
+	unsigned int pixelclock;
 	unsigned int PixelclockRange[3]; // min, max, increment
-	double exposure; 
+	double exposure;
 	double ExposureRange[3]; // min, max, increment
 	unsigned int gain;
 	unsigned int GainRange[3];

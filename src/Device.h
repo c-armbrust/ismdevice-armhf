@@ -43,7 +43,7 @@ private:
 	void ChangeState(DeviceState*);
 	bool UpdateSettings(std::string);
 	void OnNotification(Publisher*); // Pub Sub interface
-	std::string getDeviceId();
+	std::string getDeviceId(char *connectionString);
 	static IOTHUBMESSAGE_DISPOSITION_RESULT ReceiveMessageCallback(IOTHUB_MESSAGE_HANDLE, void*);
 	static void SendConfirmationCallback(IOTHUB_CLIENT_CONFIRMATION_RESULT, void*);
 	void SendD2C_DeviceSettings(std::string);

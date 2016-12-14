@@ -8,6 +8,10 @@
 #include "json.hpp"
 #include <exception>
 
+extern "C" {
+	#include "crypto.h"
+}
+
 const char* Device::connectionString = "";
 
 const utility::string_t storage_connection_string(U(""));
@@ -19,6 +23,13 @@ const utility::string_t container_name(U(""));
 
 Device::Device()
 {
+	// Decrypt connection string
+	unsigned char* connections;
+	int clen;
+	DeviceCrypto_Decrypt((char*)"connectionstring", &connections, &clen);
+	connectionString = (char*)connections;
+	// TODO: storage connection string, storage account name, container name
+	
 	_state = &Singleton<ReadyState>::Instance();
 	platform_init();
 	iotHubClientHandle = IoTHubClient_CreateFromConnectionString(connectionString, AMQP_Protocol);

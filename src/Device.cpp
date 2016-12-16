@@ -14,25 +14,32 @@ extern "C" {
 
 const char* Device::connectionString = "";
 
-const utility::string_t storage_connection_string(U(""));
-
-const std::string storage_acc_name = "";
-
-// use lower case letters only for container name
-const utility::string_t container_name(U(""));
+// const utility::string_t storage_connection_string(U(""));
+//
+// const std::string storage_acc_name = "";
+//
+// // use lower case letters only for container name
+// const utility::string_t container_name(U(""));
 
 Device::Device()
 {
 	// Decrypt connection string
 	unsigned char* connections;
 	int clen;
-	DeviceCrypto_Decrypt((char*)"connectionstring", &connections, &clen);
-	connectionString = (char*)connections;
+	DeviceCrypto_Decrypt((char*)"settings", &connections, &clen);
+	std::cout << connections << std::endl;
+	nlohmann::json settings = nlohmann::json::parse(connections);
+	std::string connectionString = settings["ConnectionString"];
+	std::string storage_connection_string = settings["StorageConnectionString"];
+	std::string storage_acc_name = settings["StorageAccount"];
+	std::string container_name = settings["storageContainer"];
+	Device::connectionString = connectionString.c_str();
+
 	// TODO: storage connection string, storage account name, container name
 
 	_state = &Singleton<ReadyState>::Instance();
 	platform_init();
-	iotHubClientHandle = IoTHubClient_CreateFromConnectionString(connectionString, AMQP_Protocol);
+	iotHubClientHandle = IoTHubClient_CreateFromConnectionString(Device::connectionString, AMQP_Protocol);
 	camera = new Camera(storage_connection_string, container_name, storage_acc_name);
 	camera->GetCameraInfo();
 

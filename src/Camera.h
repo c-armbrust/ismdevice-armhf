@@ -46,7 +46,7 @@ public: //public exposed  Publishers aka Events
 	CaptureNotificationPublisher NewCaptureUploaded;
 
 private:
-	void InitBlobStorage();
+	void InitBlobStorage(utility::string_t storageConnectionString);
 	void InitPRU();
 	void InitCamera();
 	void HandleCaptures();
@@ -55,7 +55,6 @@ private:
 
 private:
 	// Blob Storage
-	const utility::string_t storageConnectionString;
 	const utility::string_t containerName;
 	const std::string storageAccountName;
 	azure::storage::cloud_blob_container container;

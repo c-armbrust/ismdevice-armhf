@@ -21,15 +21,19 @@ extern "C" {
 
 Device::Device()
 {
-	// Decrypt connection string
-	unsigned char* connections;
-	int clen;
-	DeviceCrypto_Decrypt((char*)"settings", &connections, &clen);
-	nlohmann::json settings = nlohmann::json::parse(connections);
+	// Variables for the decrypted JSON settings
+	unsigned char* jsonString;
+	int jsonLength;
+	// Decrypt device settings using TPM
+	DeviceCrypto_Decrypt((char*)"settings", &decrypted, &jsonLength);
+	// Parse JSON
+	nlohmann::json settings = nlohmann::json::parse(decrypted);
+	// Fill into string variables
 	std::string connectionString = settings["ConnectionString"];
 	std::string storage_connection_string = settings["StorageConnectionString"];
 	std::string storage_acc_name = settings["StorageAccount"];
 	std::string container_name = settings["storageContainer"];
+	// Start Device initialization
 	_state = &Singleton<ReadyState>::Instance();
 	platform_init();
 	iotHubClientHandle = IoTHubClient_CreateFromConnectionString(connectionString.c_str(), AMQP_Protocol);
@@ -41,10 +45,12 @@ Device::Device()
 								  camera->getGain(), camera->getExposure(), // int Gain, double Exposure
 								  4, 0, 1000); // int PulseWidth, int Current, int Predelay
 
+	// Overwrite strings with 0 in memory since we don't know when the RAM is gonna be used by something else
 	memset((void*)connectionString.data(), 0, connectionString.size());
 	memset((void*)storage_connection_string.data(), 0, storage_connection_string.size());
 	memset((void*)storage_acc_name.data(), 0, storage_acc_name.size());
 	memset((void*)container_name.data(), 0, container_name.size());
+	// For each JSON value, get a pointer and overwrite the memory with 0
 	auto ptr = settings["ConnectionString"].get_ptr<nlohmann::json::string_t*>();
 	memset((void*)ptr->data(), 0, ptr->size());
 	ptr = settings["StorageConnectionString"].get_ptr<nlohmann::json::string_t*>();
@@ -53,6 +59,7 @@ Device::Device()
 	memset((void*)ptr->data(), 0, ptr->size());
 	ptr = settings["storageContainer"].get_ptr<nlohmann::json::string_t*>();
 	memset((void*)ptr->data(), 0, ptr->size());
+	// Reassign each value of the JSON object an empty string because the object still thinks we have full sized strings in memory and won't free our memory
 	settings["ConnectionString"] = "";
 	settings["StorageConnectionString"] = "";
 	settings["StorageAccount"] = "";

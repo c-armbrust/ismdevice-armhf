@@ -25,15 +25,11 @@ Device::Device()
 	unsigned char* connections;
 	int clen;
 	DeviceCrypto_Decrypt((char*)"settings", &connections, &clen);
-	std::cout << connections << std::endl;
 	nlohmann::json settings = nlohmann::json::parse(connections);
 	std::string connectionString = settings["ConnectionString"];
 	std::string storage_connection_string = settings["StorageConnectionString"];
 	std::string storage_acc_name = settings["StorageAccount"];
 	std::string container_name = settings["storageContainer"];
-
-	// TODO: storage connection string, storage account name, container name
-
 	_state = &Singleton<ReadyState>::Instance();
 	platform_init();
 	iotHubClientHandle = IoTHubClient_CreateFromConnectionString(connectionString.c_str(), AMQP_Protocol);
@@ -44,6 +40,23 @@ Device::Device()
 								  0.0025, 8.5, 3.75, 4, 16, // double VarianceThreshold, double DistanceMapThreshold, double RGThreshold, double RestrictedFillingThreshold, double DilateValue
 								  camera->getGain(), camera->getExposure(), // int Gain, double Exposure
 								  4, 0, 1000); // int PulseWidth, int Current, int Predelay
+
+	memset((void*)connectionString.data(), 0, connectionString.size());
+	memset((void*)storage_connection_string.data(), 0, storage_connection_string.size());
+	memset((void*)storage_acc_name.data(), 0, storage_acc_name.size());
+	memset((void*)container_name.data(), 0, container_name.size());
+	auto ptr = settings["ConnectionString"].get_ptr<nlohmann::json::string_t*>();
+	memset((void*)ptr->data(), 0, ptr->size());
+	ptr = settings["StorageConnectionString"].get_ptr<nlohmann::json::string_t*>();
+	memset((void*)ptr->data(), 0, ptr->size());
+	ptr = settings["StorageAccount"].get_ptr<nlohmann::json::string_t*>();
+	memset((void*)ptr->data(), 0, ptr->size());
+	ptr = settings["storageContainer"].get_ptr<nlohmann::json::string_t*>();
+	memset((void*)ptr->data(), 0, ptr->size());
+	settings["ConnectionString"] = "";
+	settings["StorageConnectionString"] = "";
+	settings["StorageAccount"] = "";
+	settings["storageContainer"] = "";
 }
 
 Device::~Device()

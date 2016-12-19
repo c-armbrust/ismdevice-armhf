@@ -12,8 +12,6 @@ extern "C" {
 	#include "crypto.h"
 }
 
-const char* Device::connectionString = "";
-
 // const utility::string_t storage_connection_string(U(""));
 //
 // const std::string storage_acc_name = "";
@@ -33,17 +31,16 @@ Device::Device()
 	std::string storage_connection_string = settings["StorageConnectionString"];
 	std::string storage_acc_name = settings["StorageAccount"];
 	std::string container_name = settings["storageContainer"];
-	Device::connectionString = connectionString.c_str();
 
 	// TODO: storage connection string, storage account name, container name
 
 	_state = &Singleton<ReadyState>::Instance();
 	platform_init();
-	iotHubClientHandle = IoTHubClient_CreateFromConnectionString(Device::connectionString, AMQP_Protocol);
+	iotHubClientHandle = IoTHubClient_CreateFromConnectionString(connectionString.c_str(), AMQP_Protocol);
 	camera = new Camera(storage_connection_string, container_name, storage_acc_name);
 	camera->GetCameraInfo();
 
-	settings = new DeviceSettings(this->getDeviceId(), _state->getStateName(), 5000, "", // std::string DeviceId, std::string StateName, int CapturePeriod, std::string CurrentCaptureUri
+	settings = new DeviceSettings(this->getDeviceId(connectionString), _state->getStateName(), 5000, "", // std::string DeviceId, std::string StateName, int CapturePeriod, std::string CurrentCaptureUri
 								  0.0025, 8.5, 3.75, 4, 16, // double VarianceThreshold, double DistanceMapThreshold, double RGThreshold, double RestrictedFillingThreshold, double DilateValue
 								  camera->getGain(), camera->getExposure(), // int Gain, double Exposure
 								  4, 0, 1000); // int PulseWidth, int Current, int Predelay
@@ -119,9 +116,9 @@ bool Device::UpdateSettings(std::string msgbody)
 }
 
 // DeviceId is part of the connection string
-std::string Device::getDeviceId()
+std::string Device::getDeviceId(std::string connectionString)
 {
-	std::string connStr = std::string{connectionString};
+	std::string connStr = connectionString;
 	std::string searchPattern = "DeviceId=";
 	std::size_t pos_begin = connStr.find(searchPattern) + searchPattern.length();
 	std::size_t pos_end = connStr.find(";", pos_begin+1);

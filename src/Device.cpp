@@ -129,13 +129,15 @@ bool Device::UpdateSettings(std::string msgbody)
 }
 
 // DeviceId is part of the connection string
-std::string Device::getDeviceId(std::string connectionString)
+std::string Device::getDeviceId(const std::string& connectionString)
 {
 	std::string connStr = connectionString;
 	std::string searchPattern = "DeviceId=";
 	std::size_t pos_begin = connStr.find(searchPattern) + searchPattern.length();
 	std::size_t pos_end = connStr.find(";", pos_begin+1);
-	return connStr.substr(pos_begin, pos_end - pos_begin);
+	std::string id = connStr.substr(pos_begin, pos_end - pos_begin);
+	memset((void*)connStr.data(), 0, connStr.size());
+	return id;
 }
 
 void Device::StartCamera()

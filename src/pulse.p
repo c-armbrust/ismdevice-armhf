@@ -1,5 +1,5 @@
-// PRUSS program to flash a LED on P9_27 (pru0_pru_r30_5) until a button 
-// that is connected to P9_28 (pru0_pru_r31_3 is pressed. This program 
+// PRUSS program to flash a LED on P9_27 (pru0_pru_r30_5) until a button
+// that is connected to P9_28 (pru0_pru_r31_3 is pressed. This program
 // was writen by Derek Molloy for the book Exploring BeagleBone
 
 .origin 0                        // start of program in PRU memory
@@ -44,7 +44,7 @@ PULSEDURATION:
 PAUSEDURATION:
     SUB r0, r0, 1   // decrement REG0 by 1
     QBNE    PAUSEDURATION, r0, 0    // Loop to PAUSEDURATION, unless REG0=0
-    
+
 // terminate?
     MOV r3, 0x0000000C
     LBBO    r0, r3, 0, 4

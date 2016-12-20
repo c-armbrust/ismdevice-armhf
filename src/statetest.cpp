@@ -3,7 +3,7 @@
 
 int main()
 {
-	Device* d = new Device(); 
+	Device* d = new Device();
 	d->SubscribeNotifications();
 
 	// Full state test

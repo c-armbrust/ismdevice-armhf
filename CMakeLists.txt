@@ -1,0 +1,9 @@
+cmake_minimum_required(VERSION 3.0)
+project(ismdevice)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/inc)
+link_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib)
+SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
+
+add_executable(statetest src/statetest.cpp src/PubSub.cpp src/Device.cpp src/Commands.cpp src/Camera.cpp)
+target_link_libraries(statetest boost_system cpprest azurestorage iothub_client iothub_client_amqp_transport aziotsharedutil uamqp m curl ssl crypto pthread prussdrv ueye_api devicecrypto)

@@ -1,1 +1,9 @@
 lib/
+.idea/
+cmake-build-debug/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+statetest
+ismdevice.cbp

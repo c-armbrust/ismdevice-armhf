@@ -25,14 +25,14 @@ Device::Device()
 	unsigned char* jsonString;
 	int jsonLength;
 	// Decrypt device settings using TPM
-	DeviceCrypto_Decrypt((char*)"settings", &decrypted, &jsonLength);
+	DeviceCrypto_Decrypt((char*)"settings", &jsonString, &jsonLength);
 	// Parse JSON
-	nlohmann::json settings = nlohmann::json::parse(decrypted);
+	nlohmann::json devSettings = nlohmann::json::parse(jsonString);
 	// Fill into string variables
-	std::string connectionString = settings["ConnectionString"];
-	std::string storage_connection_string = settings["StorageConnectionString"];
-	std::string storage_acc_name = settings["StorageAccount"];
-	std::string container_name = settings["storageContainer"];
+	std::string connectionString = devSettings["ConnectionString"];
+	std::string storage_connection_string = devSettings["StorageConnectionString"];
+	std::string storage_acc_name = devSettings["StorageAccount"];
+	std::string container_name = devSettings["storageContainer"];
 	// Start Device initialization
 	_state = &Singleton<ReadyState>::Instance();
 	platform_init();
@@ -51,19 +51,19 @@ Device::Device()
 	memset((void*)storage_acc_name.data(), 0, storage_acc_name.size());
 	memset((void*)container_name.data(), 0, container_name.size());
 	// For each JSON value, get a pointer and overwrite the memory with 0
-	auto ptr = settings["ConnectionString"].get_ptr<nlohmann::json::string_t*>();
+	auto ptr = devSettings["ConnectionString"].get_ptr<nlohmann::json::string_t*>();
 	memset((void*)ptr->data(), 0, ptr->size());
-	ptr = settings["StorageConnectionString"].get_ptr<nlohmann::json::string_t*>();
+	ptr = devSettings["StorageConnectionString"].get_ptr<nlohmann::json::string_t*>();
 	memset((void*)ptr->data(), 0, ptr->size());
-	ptr = settings["StorageAccount"].get_ptr<nlohmann::json::string_t*>();
+	ptr = devSettings["StorageAccount"].get_ptr<nlohmann::json::string_t*>();
 	memset((void*)ptr->data(), 0, ptr->size());
-	ptr = settings["storageContainer"].get_ptr<nlohmann::json::string_t*>();
+	ptr = devSettings["storageContainer"].get_ptr<nlohmann::json::string_t*>();
 	memset((void*)ptr->data(), 0, ptr->size());
 	// Reassign each value of the JSON object an empty string because the object still thinks we have full sized strings in memory and won't free our memory
-	settings["ConnectionString"] = "";
-	settings["StorageConnectionString"] = "";
-	settings["StorageAccount"] = "";
-	settings["storageContainer"] = "";
+	devSettings["ConnectionString"] = "";
+	devSettings["StorageConnectionString"] = "";
+	devSettings["StorageAccount"] = "";
+	devSettings["storageContainer"] = "";
 }
 
 Device::~Device()

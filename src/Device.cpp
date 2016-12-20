@@ -12,13 +12,6 @@ extern "C" {
 	#include "crypto.h"
 }
 
-// const utility::string_t storage_connection_string(U(""));
-//
-// const std::string storage_acc_name = "";
-//
-// // use lower case letters only for container name
-// const utility::string_t container_name(U(""));
-
 Device::Device()
 {
 	// Variables for the decrypted JSON settings

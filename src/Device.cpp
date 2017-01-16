@@ -30,12 +30,11 @@ Device::Device()
 	_state = &Singleton<ReadyState>::Instance();
 	platform_init();
 	iotHubClientHandle = IoTHubClient_CreateFromConnectionString(connectionString.c_str(), AMQP_Protocol);
-	camera = new Camera(storage_connection_string, container_name, storage_acc_name);
-	camera->GetCameraInfo();
-
+//	camera = new Camera(storage_connection_string, container_name, storage_acc_name);
+//	camera->GetCameraInfo();
 	settings = new DeviceSettings(this->getDeviceId(connectionString), _state->getStateName(), 5000, "", // std::string DeviceId, std::string StateName, int CapturePeriod, std::string CurrentCaptureUri
 								  0.0025, 8.5, 3.75, 4, 16, // double VarianceThreshold, double DistanceMapThreshold, double RGThreshold, double RestrictedFillingThreshold, double DilateValue
-								  camera->getGain(), camera->getExposure(), // int Gain, double Exposure
+								  10, 10.0,//camera->getGain(), camera->getExposure(), // int Gain, double Exposure
 								  4, 0, 1000); // int PulseWidth, int Current, int Predelay
 
 	// Overwrite strings with 0 in memory since we don't know when the RAM is gonna be used by something else
@@ -62,7 +61,7 @@ Device::Device()
 Device::~Device()
 {
 	// Pub Sub detach
-	camera->NewCaptureUploaded.Detach(this);
+//	camera->NewCaptureUploaded.Detach(this);
 }
 
 
@@ -95,7 +94,7 @@ void Device::OnNotification(Publisher* context)
 
 void Device::SubscribeNotifications()
 {
-	camera->NewCaptureUploaded.Attach(this);
+//	camera->NewCaptureUploaded.Attach(this);
 }
 
 
@@ -114,12 +113,12 @@ bool Device::UpdateSettings(std::string msgbody)
 
 	// Update camera settings
 	//
-	SetCameraPruValues(); // Assertion: settings is updated before this call
+//	SetCameraPruValues(); // Assertion: settings is updated before this call
 
-	if(camera->setGain(settings->getGain()) == false)
-		return false;
-	if(camera->setExposure(settings->getExposure()) == false)
-		return false;
+//	if(camera->setGain(settings->getGain()) == false)
+//		return false;
+//	if(camera->setExposure(settings->getExposure()) == false)
+//		return false;
 
 	std::cout << "\nnew settings:" << std::endl;
 	settings->Report();
@@ -142,8 +141,8 @@ std::string Device::getDeviceId(const std::string& connectionString)
 
 void Device::StartCamera()
 {
-	SetCameraPruValues();
-	camera->Start();
+//	SetCameraPruValues();
+//	camera->Start();
 }
 
 void Device::SetCameraPruValues()
@@ -194,7 +193,7 @@ void Device::SetCameraPruValues()
 
 void Device::StopCamera()
 {
-	camera->Stop();
+//	camera->Stop();
 }
 
 IOTHUBMESSAGE_DISPOSITION_RESULT Device::Start()

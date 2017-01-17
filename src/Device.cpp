@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include "json.hpp"
 #include <exception>
+#include <iothubtransportmqtt.h>
 
 extern "C" {
 	#include "crypto.h"
@@ -29,7 +30,7 @@ Device::Device()
 	// Start Device initialization
 	_state = &Singleton<ReadyState>::Instance();
 	platform_init();
-	iotHubClientHandle = IoTHubClient_CreateFromConnectionString(connectionString.c_str(), AMQP_Protocol);
+	iotHubClientHandle = IoTHubClient_CreateFromConnectionString(connectionString.c_str(), MQTT_Protocol);
 //	camera = new Camera(storage_connection_string, container_name, storage_acc_name);
 //	camera->GetCameraInfo();
 	settings = new DeviceSettings(this->getDeviceId(connectionString), _state->getStateName(), 5000, "", // std::string DeviceId, std::string StateName, int CapturePeriod, std::string CurrentCaptureUri

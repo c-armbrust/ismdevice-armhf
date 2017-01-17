@@ -8,6 +8,7 @@
 #include "json.hpp"
 #include <exception>
 #include <iothubtransportmqtt.h>
+#include "FwUpdate.h"
 
 extern "C" {
 	#include "crypto.h"
@@ -37,6 +38,12 @@ Device::Device()
 								  0.0025, 8.5, 3.75, 4, 16, // double VarianceThreshold, double DistanceMapThreshold, double RGThreshold, double RestrictedFillingThreshold, double DilateValue
 								  10, 10.0,//camera->getGain(), camera->getExposure(), // int Gain, double Exposure
 								  4, 0, 1000); // int PulseWidth, int Current, int Predelay
+
+	// Register direct method callback
+	int receiveContext = 0;
+	if (IoTHubClient_SetDeviceMethodCallback(iotHubClientHandle, DeviceMethodCallback, &receiveContext) != IOTHUB_CLIENT_OK) {
+		std::cout << "Error! Registering Direct Method callback failed.\n";
+	}
 
 	// Overwrite strings with 0 in memory since we don't know when the RAM is gonna be used by something else
 	memset((void*)connectionString.data(), 0, connectionString.size());

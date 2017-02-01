@@ -34,6 +34,7 @@ Device::Device()
 	iotHubClientHandle = IoTHubClient_CreateFromConnectionString(connectionString.c_str(), MQTT_Protocol);
 //	camera = new Camera(storage_connection_string, container_name, storage_acc_name);
 //	camera->GetCameraInfo();
+    firmwareUpdateHandler = new FirmwareUpdateHandler(storage_connection_string, "fwupdates", storage_acc_name);
 	settings = new DeviceSettings(this->getDeviceId(connectionString), _state->getStateName(), 5000, "", // std::string DeviceId, std::string StateName, int CapturePeriod, std::string CurrentCaptureUri
 								  0.0025, 8.5, 3.75, 4, 16, // double VarianceThreshold, double DistanceMapThreshold, double RGThreshold, double RestrictedFillingThreshold, double DilateValue
 								  10, 10.0,//camera->getGain(), camera->getExposure(), // int Gain, double Exposure

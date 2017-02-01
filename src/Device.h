@@ -9,6 +9,7 @@
 #include "iothubtransportamqp.h"
 #include <thread>
 #include "Camera.h"
+#include "FirmwareUpdateHandler.h"
 
 // max event message size on IoT Hub = max brokered message size for servicebus = 256kB
 #define MAX_SEND_BUFFER_SIZE 262144
@@ -56,6 +57,7 @@ private:
 	IOTHUB_CLIENT_HANDLE iotHubClientHandle;
 	DeviceSettings* settings;
 	Camera* camera;
+    FirmwareUpdateHandler* firmwareUpdateHandler;
 };
 
 

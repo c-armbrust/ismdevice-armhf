@@ -15,35 +15,58 @@ FirmwareUpdateHandler::FirmwareUpdateHandler(utility::string_t stoconnstr, utili
 
 int FirmwareUpdateHandler::DeviceMethodCallback(const char *method_name, const unsigned char *payload, size_t size, unsigned char **response, size_t *resp_size, void *userContextCallback) {
     (void)userContextCallback;
+    // Convert method name to string
+    std::string method = std::string{method_name};
+    // If method is firmwareUpdate, initiate firmware update
+    if(method.compare("firmwareUpdate") == 0) {
+        // Get JSON payload
+        std::string fw_data((char*)payload, size);
 
-    printf("\r\nDevice Method called\r\n");
-    printf("Device Method name:    %s\r\n", method_name);
-    printf("Device Method payload: %.*s\r\n", (int)size, (const char*)payload);
+        std::cout << "\nInitiate Firmware Update\n";
 
-    int status = 200;
+        std::cout << "Payload: " << fw_data << std::endl;
+    }
+    // Else return a generic response
+    else {
+        std::cout << "Unknown device method called: " << method << std::endl;
+        std::cout << "Payload: " << payload << std::endl;
+    }
+
+    // Respond to method
     char* RESPONSE_STRING = (char*)"{ \"Response\": \"This is the response from the device\" }";
-    printf("\r\nResponse status: %d\r\n", status);
-    printf("Response payload: %s\r\n\r\n", RESPONSE_STRING);
+    int status = 200;
+    std::cout << "Response status:  " << status << std::endl;
+    std::cout << "Response payload: " << RESPONSE_STRING << std::endl;
 
     *resp_size = strlen(RESPONSE_STRING);
     if ((*response = (unsigned char*)malloc(*resp_size)) == NULL)
-    {
         status = -1;
-    }
     else
-    {
         memcpy(*response, RESPONSE_STRING, *resp_size);
-    }
-    return status;
 
+    return status;
+}
+
+void FirmwareUpdateHandler::DownloadFirmwareUpdate(std::string blobUrl, std::string fileName) {
+    // Retrieve reference to blob
+    azure::storage::cloud_block_blob blockBlob = container.get_block_blob_reference(U(fileName));
+    blockBlob.download_to_file("~/fwupdate.tar.gz");
+    // Save blob contents to a file.
+//    concurrency::streams::container_buffer<std::vector<uint8_t>> buffer;
+//    concurrency::streams::ostream output_stream(buffer);
+//    blockBlob.download_to_stream(output_stream);
+//
+//    std::ofstream outfile(fileName, std::ofstream::binary);
+//    std::vector<unsigned char>& data = buffer.collection();
+//
+//    outfile.write((char *)&data[0], buffer.size());
+//    outfile.close();
 }
 
 void FirmwareUpdateHandler::InitBlobStorage(utility::string_t storageConnectionString)
 {
     try
     {
-        std::cout << "Create Azure Storage container " << containerName << " on Storage Account " << storageAccountName << " if not exists" << std::endl;
-
         // Retrieve storage account from connection string.
         azure::storage::cloud_storage_account storage_account = azure::storage::cloud_storage_account::parse(storageConnectionString);
 
@@ -55,11 +78,6 @@ void FirmwareUpdateHandler::InitBlobStorage(utility::string_t storageConnectionS
 
         // Create the container if it doesn't already exist.
         container.create_if_not_exists();
-
-        // Make the blob container publicly accessible.
-        azure::storage::blob_container_permissions permissions;
-        permissions.set_public_access(azure::storage::blob_container_public_access_type::blob);
-        container.upload_permissions(permissions);
     }
     catch(const std::exception& e)
     {

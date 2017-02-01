@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include "iothub_client.h"
 #include "FirmwareUpdateHandler.h"
+#include "json.hpp"
 
 
 FirmwareUpdateHandler::FirmwareUpdateHandler(utility::string_t stoconnstr, utility::string_t containername, std::string storageaccname) : containerName{containername}, storageAccountName{storageaccname}
@@ -20,11 +21,18 @@ int FirmwareUpdateHandler::DeviceMethodCallback(const char *method_name, const u
     // If method is firmwareUpdate, initiate firmware update
     if(method.compare("firmwareUpdate") == 0) {
         // Get JSON payload
-        std::string fw_data((char*)payload, size);
+        nlohmann::json fw_data = nlohmann::json::parse(std::string((char*)payload, size));
+        std::string blob = fw_data["blobUrl"];
+        std::string fileName = fw_data["fileName"];
 
         std::cout << "\nInitiate Firmware Update\n";
+        std::cout << "Uri: " << blob << std::endl;
+        std::cout << "Filename: " << fileName << std::endl;
 
-        std::cout << "Payload: " << fw_data << std::endl;
+        // Download data
+        FirmwareUpdateHandler* firmwareUpdateHandler = (FirmwareUpdateHandler*)userContextCallback;
+        firmwareUpdateHandler->DownloadFirmwareUpdate(blob, fileName);
+
     }
     // Else return a generic response
     else {
@@ -49,8 +57,10 @@ int FirmwareUpdateHandler::DeviceMethodCallback(const char *method_name, const u
 
 void FirmwareUpdateHandler::DownloadFirmwareUpdate(std::string blobUrl, std::string fileName) {
     // Retrieve reference to blob
+    std::cout << "Downloading " << fileName << " from " << blobUrl << std::endl;
     azure::storage::cloud_block_blob blockBlob = container.get_block_blob_reference(U(fileName));
-    blockBlob.download_to_file("~/fwupdate.tar.gz");
+    blockBlob.download_to_file("/home/debian/fwupdate.tar.gz");
+    std::cout << "Done!\n";
     // Save blob contents to a file.
 //    concurrency::streams::container_buffer<std::vector<uint8_t>> buffer;
 //    concurrency::streams::ostream output_stream(buffer);

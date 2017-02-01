@@ -27,7 +27,7 @@ Device::Device()
 	std::string connectionString = devSettings["ConnectionString"];
 	std::string storage_connection_string = devSettings["StorageConnectionString"];
 	std::string storage_acc_name = devSettings["StorageAccount"];
-	std::string container_name = devSettings["storageContainer"];
+	std::string container_name = devSettings["StorageContainer"];
 	// Start Device initialization
 	_state = &Singleton<ReadyState>::Instance();
 	platform_init();
@@ -41,8 +41,7 @@ Device::Device()
 								  4, 0, 1000); // int PulseWidth, int Current, int Predelay
 
 	// Register direct method callback
-	int receiveContext = 0;
-	if (IoTHubClient_SetDeviceMethodCallback(iotHubClientHandle, FirmwareUpdateHandler::DeviceMethodCallback, &receiveContext) != IOTHUB_CLIENT_OK) {
+	if (IoTHubClient_SetDeviceMethodCallback(iotHubClientHandle, FirmwareUpdateHandler::DeviceMethodCallback, firmwareUpdateHandler) != IOTHUB_CLIENT_OK) {
 		std::cout << "Error! Registering Direct Method callback failed.\n";
 	}
 

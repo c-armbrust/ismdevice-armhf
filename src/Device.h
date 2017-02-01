@@ -57,6 +57,8 @@ private:
 	IOTHUB_CLIENT_HANDLE iotHubClientHandle;
 	DeviceSettings* settings;
 	Camera* camera;
+
+public:
     FirmwareUpdateHandler* firmwareUpdateHandler;
 };
 

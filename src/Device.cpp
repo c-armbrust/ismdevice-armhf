@@ -41,7 +41,7 @@ Device::Device()
 								  4, 0, 1000); // int PulseWidth, int Current, int Predelay
 
 	// Register direct method callback
-	if (IoTHubClient_SetDeviceMethodCallback(iotHubClientHandle, FirmwareUpdateHandler::DeviceMethodCallback, firmwareUpdateHandler) != IOTHUB_CLIENT_OK) {
+	if (IoTHubClient_SetDeviceMethodCallback(iotHubClientHandle, Device::DeviceMethodCallback, this) != IOTHUB_CLIENT_OK) {
 		std::cout << "Error! Registering Direct Method callback failed.\n";
 	}
 
@@ -57,13 +57,13 @@ Device::Device()
 	memset((void*)ptr->data(), 0, ptr->size());
 	ptr = devSettings["StorageAccount"].get_ptr<nlohmann::json::string_t*>();
 	memset((void*)ptr->data(), 0, ptr->size());
-	ptr = devSettings["storageContainer"].get_ptr<nlohmann::json::string_t*>();
+	ptr = devSettings["StorageContainer"].get_ptr<nlohmann::json::string_t*>();
 	memset((void*)ptr->data(), 0, ptr->size());
 	// Reassign each value of the JSON object an empty string because the object still thinks we have full sized strings in memory and won't free our memory
 	devSettings["ConnectionString"] = "";
 	devSettings["StorageConnectionString"] = "";
 	devSettings["StorageAccount"] = "";
-	devSettings["storageContainer"] = "";
+	devSettings["StorageContainer"] = "";
 }
 
 Device::~Device()
@@ -72,8 +72,40 @@ Device::~Device()
 //	camera->NewCaptureUploaded.Detach(this);
 }
 
+int Device::DeviceMethodCallback(const char *method_name, const unsigned char *payload, size_t size, unsigned char **response, size_t *resp_size, void *userContextCallback) {
+    // Convert method name to string
+    std::string method = std::string{method_name};
+    // If method is firmwareUpdate, initiate firmware update
+    if(method.compare("firmwareUpdate") == 0) {
+        // Get JSON payload
+        nlohmann::json fw_data = nlohmann::json::parse(std::string((char*)payload, size));
+        std::string blob = fw_data["blobUrl"];
+        std::string fileName = fw_data["fileName"];
 
+        std::cout << "\nInitiate Firmware Update\n";
+        // Download data
+        Device* device = (Device*)userContextCallback;
+        device->FirmwareUpdate(blob, fileName, "");
+    }
 
+    // Respond to method
+    char* RESPONSE_STRING = (char*)"{ \"Response\": \"This is the response from the device\" }";
+    int status = 200;
+    std::cout << "Response status:  " << status << std::endl;
+    std::cout << "Response payload: " << RESPONSE_STRING << std::endl;
+
+    *resp_size = strlen(RESPONSE_STRING);
+    if ((*response = (unsigned char*)malloc(*resp_size)) == NULL)
+        status = -1;
+    else
+        memcpy(*response, RESPONSE_STRING, *resp_size);
+
+    return status;
+}
+
+void Device::FirmwareUpdate(std::string blobUrl, std::string fileName, std::string publicKeyUrl) {
+    this->firmwareUpdateHandler->HandleFirmwareUpdate(blobUrl, fileName, publicKeyUrl);
+}
 // Pub Sub interface
 void Device::OnNotification(Publisher* context)
 {

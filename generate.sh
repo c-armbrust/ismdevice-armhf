@@ -5,7 +5,8 @@
 #        User debian # Standard user on beaglebone black
 #        IdentityFile /root/.ssh/id_ed25519 # Your ssh key to authenticate if you placed the public part in ~/.ssh/authorized_keys
 echo "Building project..."
-make -C /home/debian/ismdevice-armhf
+cd /home/debian/ismdevice-armhf
+make
 
 if [ $? -ne 0 ]; then
   echo -e "\nAn error occured during compilation." 1>&2

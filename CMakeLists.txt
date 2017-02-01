@@ -6,6 +6,6 @@ SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11")
 
-add_executable(statetest src/statetest.cpp src/PubSub.cpp src/Device.cpp src/Commands.cpp src/Camera.cpp src/FwUpdate.c src/FwUpdate.h)
+add_executable(statetest src/statetest.cpp src/PubSub.cpp src/Device.cpp src/Commands.cpp src/Camera.cpp src/FirmwareUpdateHandler.cpp src/FirmwareUpdateHandler.h)
 #target_link_libraries(statetest boost_system cpprest azurestorage iothub_client iothub_client_amqp_transport aziotsharedutil uamqp m curl ssl crypto pthread prussdrv ueye_api devicecrypto)
 target_link_libraries(statetest boost_system cpprest azurestorage iothub_client iothub_client_mqtt_transport aziotsharedutil umqtt m curl ssl crypto pthread prussdrv ueye_api devicecrypto)

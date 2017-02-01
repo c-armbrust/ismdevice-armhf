@@ -8,7 +8,7 @@
 #include "json.hpp"
 #include <exception>
 #include <iothubtransportmqtt.h>
-#include "FwUpdate.h"
+#include "FirmwareUpdateHandler.h"
 
 extern "C" {
 	#include "crypto.h"
@@ -41,7 +41,7 @@ Device::Device()
 
 	// Register direct method callback
 	int receiveContext = 0;
-	if (IoTHubClient_SetDeviceMethodCallback(iotHubClientHandle, DeviceMethodCallback, &receiveContext) != IOTHUB_CLIENT_OK) {
+	if (IoTHubClient_SetDeviceMethodCallback(iotHubClientHandle, FirmwareUpdateHandler::DeviceMethodCallback, &receiveContext) != IOTHUB_CLIENT_OK) {
 		std::cout << "Error! Registering Direct Method callback failed.\n";
 	}
 

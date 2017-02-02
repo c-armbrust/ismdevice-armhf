@@ -31,7 +31,7 @@ Device::Device()
     // Container in which firmware update files are stored
     std::string firmware_update_container = devSettings["FwUpdateContainer"];
     // Url to retrieve public key from portal
-    std::string public_key_url = devSettings["PublicKeyUrl"];
+    publicKeyUrl = devSettings["PublicKeyUrl"];
 
 
 	// Start Device initialization
@@ -57,7 +57,6 @@ Device::Device()
 	memset((void*)storage_acc_name.data(), 0, storage_acc_name.size());
 	memset((void*)container_name.data(), 0, container_name.size());
     memset((void*)firmware_update_container.data(), 0, firmware_update_container.size());
-    memset((void*)public_key_url.data(), 0, public_key_url.size());
 	// For each JSON value, get a pointer and overwrite the memory with 0
 	auto ptr = devSettings["ConnectionString"].get_ptr<nlohmann::json::string_t*>();
 	memset((void*)ptr->data(), 0, ptr->size());
@@ -99,7 +98,7 @@ int Device::DeviceMethodCallback(const char *method_name, const unsigned char *p
         std::cout << "\nInitiate Firmware Update\n";
         // Download data
         Device* device = (Device*)userContextCallback;
-        device->FirmwareUpdate(blob, fileName, "");
+        device->FirmwareUpdate(blob, fileName);
     }
 
     // Respond to method
@@ -117,7 +116,7 @@ int Device::DeviceMethodCallback(const char *method_name, const unsigned char *p
     return status;
 }
 
-void Device::FirmwareUpdate(std::string blobUrl, std::string fileName, std::string publicKeyUrl) {
+void Device::FirmwareUpdate(std::string blobUrl, std::string fileName) {
     this->firmwareUpdateHandler->HandleFirmwareUpdate(blobUrl, fileName, publicKeyUrl);
 }
 // Pub Sub interface

@@ -39,7 +39,7 @@ public:
 
     // Device direct method callback function
     static int DeviceMethodCallback(const char* method_name, const unsigned char* payload, size_t size, unsigned char** response, size_t* resp_size, void* userContextCallback);
-    void FirmwareUpdate(std::string blobUrl, std::string fileName, std::string publicKeyUrl);
+    void FirmwareUpdate(std::string blobUrl, std::string fileName);
 
 
 private:
@@ -64,6 +64,7 @@ private:
 
 public:
     FirmwareUpdateHandler* firmwareUpdateHandler;
+    std::string publicKeyUrl;
 };
 
 

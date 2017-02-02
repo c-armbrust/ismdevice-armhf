@@ -28,6 +28,12 @@ Device::Device()
 	std::string storage_connection_string = devSettings["StorageConnectionString"];
 	std::string storage_acc_name = devSettings["StorageAccount"];
 	std::string container_name = devSettings["StorageContainer"];
+    // Container in which firmware update files are stored
+    std::string firmware_update_container = devSettings["FwUpdateContainer"];
+    // Url to retrieve public key from portal
+    std::string public_key_url = devSettings["PublicKeyUrl"];
+
+
 	// Start Device initialization
 	_state = &Singleton<ReadyState>::Instance();
 	platform_init();
@@ -50,6 +56,8 @@ Device::Device()
 	memset((void*)storage_connection_string.data(), 0, storage_connection_string.size());
 	memset((void*)storage_acc_name.data(), 0, storage_acc_name.size());
 	memset((void*)container_name.data(), 0, container_name.size());
+    memset((void*)firmware_update_container.data(), 0, firmware_update_container.size());
+    memset((void*)public_key_url.data(), 0, public_key_url.size());
 	// For each JSON value, get a pointer and overwrite the memory with 0
 	auto ptr = devSettings["ConnectionString"].get_ptr<nlohmann::json::string_t*>();
 	memset((void*)ptr->data(), 0, ptr->size());
@@ -57,13 +65,19 @@ Device::Device()
 	memset((void*)ptr->data(), 0, ptr->size());
 	ptr = devSettings["StorageAccount"].get_ptr<nlohmann::json::string_t*>();
 	memset((void*)ptr->data(), 0, ptr->size());
-	ptr = devSettings["StorageContainer"].get_ptr<nlohmann::json::string_t*>();
-	memset((void*)ptr->data(), 0, ptr->size());
+    ptr = devSettings["StorageContainer"].get_ptr<nlohmann::json::string_t*>();
+    memset((void*)ptr->data(), 0, ptr->size());
+    ptr = devSettings["FwUpdateContainer"].get_ptr<nlohmann::json::string_t*>();
+    memset((void*)ptr->data(), 0, ptr->size());
+    ptr = devSettings["PublicKeyUrl"].get_ptr<nlohmann::json::string_t*>();
+    memset((void*)ptr->data(), 0, ptr->size());
 	// Reassign each value of the JSON object an empty string because the object still thinks we have full sized strings in memory and won't free our memory
 	devSettings["ConnectionString"] = "";
 	devSettings["StorageConnectionString"] = "";
-	devSettings["StorageAccount"] = "";
-	devSettings["StorageContainer"] = "";
+    devSettings["StorageAccount"] = "";
+    devSettings["StorageContainer"] = "";
+    devSettings["FwUpdateContainer"] = "";
+    devSettings["PublicKeyUrl"] = "";
 }
 
 Device::~Device()

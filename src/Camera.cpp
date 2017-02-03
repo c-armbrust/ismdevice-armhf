@@ -4,7 +4,6 @@
 Camera::Camera(utility::string_t stoconnstr, utility::string_t containername, std::string storageaccname) : containerName{containername}, storageAccountName{storageaccname}
 {
 	InitBlobStorage(stoconnstr);
-	memset((void*)stoconnstr.data(), 0, stoconnstr.size());
 
 	InitPRU();
 

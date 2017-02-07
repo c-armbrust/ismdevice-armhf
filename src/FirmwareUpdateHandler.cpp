@@ -18,14 +18,33 @@ void FirmwareUpdateHandler::HandleFirmwareUpdate(std::string blobUrl, std::strin
     // Download firmware update file.
     this->DownloadFirmwareUpdate(blobUrl, fileName);
 
+    // Verify firmware update
+    std::cout << "-----------------------------------------------\n";
     std::cout << "------------ Verify firmware update -----------\n";
+    std::cout << "-----------------------------------------------\n";
     int r = system("/home/debian/ism-device-scripts/verify.sh");
     // If it doesn't return with success
     if (r != 0) {
         return this->HandleFirmwareUpdateError("Error during verification of firmware update.");
     }
-    std::cout << "----------- Verification successful -----------\n";
 
+    // Extract firmware update
+    std::cout << "-----------------------------------------------\n";
+    std::cout << "----------- Extract firmware update -----------\n";
+    std::cout << "-----------------------------------------------\n";
+    r = system("/home/debian/ism-device-scripts/xfwupdate.sh");
+    // If it doesn't return with success
+    if (r != 0) {
+        return this->HandleFirmwareUpdateError("Error during firmware update extraction.");
+    }
+
+    // Apply firmware update
+    std::cout << "-----------------------------------------------\n";
+    std::cout << "------------ Apply firmware update ------------\n";
+    std::cout << "-----------------------------------------------\n";
+    system("setsid /home/debian/fwupdate/data/apply.sh >/home/debian/fwupdate/logfile 2>&1 &");
+    // Shut down this program
+    exit(0);
 }
 
 void FirmwareUpdateHandler::DownloadFirmwareUpdate(std::string blobUrl, std::string fileName) {
@@ -37,7 +56,7 @@ void FirmwareUpdateHandler::DownloadFirmwareUpdate(std::string blobUrl, std::str
 }
 
 void FirmwareUpdateHandler::HandleFirmwareUpdateError(std::string error) {
-    std:: cout << "Error during firmware update: " << error << std::endl;
+    std::cout << "Error during firmware update: " << error << std::endl;
     std::cout << "---------- Verification unsuccessful ----------\n";
 }
 

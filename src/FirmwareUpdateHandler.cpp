@@ -15,7 +15,17 @@ FirmwareUpdateHandler::FirmwareUpdateHandler(utility::string_t stoconnstr, utili
 }
 
 void FirmwareUpdateHandler::HandleFirmwareUpdate(std::string blobUrl, std::string fileName, std::string publicKeyUrl) {
+    // Download firmware update file.
     this->DownloadFirmwareUpdate(blobUrl, fileName);
+
+    std::cout << "------------ Verify firmware update -----------\n";
+    int r = system("/home/debian/ism-device-scripts/verify.sh");
+    // If it doesn't return with success
+    if (r != 0) {
+        return this->HandleFirmwareUpdateError("Error during verification of firmware update.");
+    }
+    std::cout << "----------- Verification successful -----------\n";
+
 }
 
 void FirmwareUpdateHandler::DownloadFirmwareUpdate(std::string blobUrl, std::string fileName) {
@@ -24,6 +34,11 @@ void FirmwareUpdateHandler::DownloadFirmwareUpdate(std::string blobUrl, std::str
     azure::storage::cloud_block_blob blockBlob = container.get_block_blob_reference(U(fileName));
     blockBlob.download_to_file("/home/debian/fwupdate.tar.gz");
     std::cout << "Done!\n";
+}
+
+void FirmwareUpdateHandler::HandleFirmwareUpdateError(std::string error) {
+    std:: cout << "Error during firmware update: " << error << std::endl;
+    std::cout << "---------- Verification unsuccessful ----------\n";
 }
 
 void FirmwareUpdateHandler::InitBlobStorage(utility::string_t storageConnectionString)

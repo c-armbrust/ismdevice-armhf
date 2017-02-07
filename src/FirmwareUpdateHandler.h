@@ -16,6 +16,7 @@ public:
 private:
     void InitBlobStorage(utility::string_t storageConnectionString);
     void DownloadFirmwareUpdate(std::string blobUrl, std::string fileName);
+    void HandleFirmwareUpdateError(std::string error);
 
 private:
     // Blob Storage

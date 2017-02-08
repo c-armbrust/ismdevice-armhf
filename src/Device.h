@@ -9,6 +9,7 @@
 #include "iothubtransportamqp.h"
 #include <thread>
 #include "Camera.h"
+#include "FirmwareUpdateHandler.h"
 
 // max event message size on IoT Hub = max brokered message size for servicebus = 256kB
 #define MAX_SEND_BUFFER_SIZE 262144
@@ -36,6 +37,10 @@ public:
 	// Pub Sub attach (not possible in ctor because this ptr is required)
 	void SubscribeNotifications();
 
+    // Device direct method callback function
+    static int DeviceMethodCallback(const char* method_name, const unsigned char* payload, size_t size, unsigned char** response, size_t* resp_size, void* userContextCallback);
+    void FirmwareUpdate(std::string blobUrl, std::string fileName);
+
 
 private:
 	friend class DeviceState;
@@ -56,6 +61,10 @@ private:
 	IOTHUB_CLIENT_HANDLE iotHubClientHandle;
 	DeviceSettings* settings;
 	Camera* camera;
+
+public:
+    FirmwareUpdateHandler* firmwareUpdateHandler;
+    std::string publicKeyUrl;
 };
 
 

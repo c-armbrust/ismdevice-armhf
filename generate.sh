@@ -5,15 +5,18 @@
 #        User debian # Standard user on beaglebone black
 #        IdentityFile /root/.ssh/id_ed25519 # Your ssh key to authenticate if you placed the public part in ~/.ssh/authorized_keys
 echo "Building project..."
+cd /home/debian/ismdevice-armhf
 make
 
 if [ $? -ne 0 ]; then
   echo -e "\nAn error occured during compilation." 1>&2
   exit 1
 fi
-chown 1000:1000 statetest
+
+chown 1000:1000 /home/debian/ismdevice-armhf/statetest
+
 echo "Copying executable to BBB..."
-scp statetest bbb:~
+scp /home/debian/ismdevice-armhf/statetest bbb:~
 if [ $? -ne 0 ]; then
   echo -e "\nAn error occured during copying." 1>&2
   exit 1

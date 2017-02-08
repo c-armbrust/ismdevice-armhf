@@ -8,6 +8,7 @@
 #include "json.hpp"
 #include <exception>
 #include <iothubtransportmqtt.h>
+#include "FirmwareUpdateHandler.h"
 
 extern "C" {
 	#include "crypto.h"
@@ -36,22 +37,33 @@ Device::Device(const std::string& configFile)
 	std::string storage_connection_string = devSettings["StorageConnectionString"];
 	std::string storage_acc_name = devSettings["StorageAccount"];
 	std::string container_name = devSettings["StorageContainer"];
+    // Container in which firmware update files are stored
+    std::string firmware_update_container = devSettings["FwUpdateContainer"];
+    // Url to retrieve public key from portal
+    publicKeyUrl = devSettings["PublicKeyUrl"];
 	// Start Device initialization
 	_state = &Singleton<ReadyState>::Instance();
 	platform_init();
 	iotHubClientHandle = IoTHubClient_CreateFromConnectionString(connectionString.c_str(), MQTT_Protocol);
-	camera = new Camera(storage_connection_string, container_name, storage_acc_name);
-	camera->GetCameraInfo();
+//	camera = new Camera(storage_connection_string, container_name, storage_acc_name);
+//	camera->GetCameraInfo();
+    firmwareUpdateHandler = new FirmwareUpdateHandler(storage_connection_string, "fwupdates", storage_acc_name);
 	settings = new DeviceSettings(this->getDeviceId(connectionString), _state->getStateName(), 5000, "", // std::string DeviceId, std::string StateName, int CapturePeriod, std::string CurrentCaptureUri
 								  0.0025, 8.5, 3.75, 4, 16, // double VarianceThreshold, double DistanceMapThreshold, double RGThreshold, double RestrictedFillingThreshold, double DilateValue
-								  camera->getGain(), camera->getExposure(), // int Gain, double Exposure
+								  10, 10.0,//camera->getGain(), camera->getExposure(), // int Gain, double Exposure
 								  4, 0, 1000); // int PulseWidth, int Current, int Predelay
+
+	// Register direct method callback
+	if (IoTHubClient_SetDeviceMethodCallback(iotHubClientHandle, Device::DeviceMethodCallback, this) != IOTHUB_CLIENT_OK) {
+		std::cout << "Error! Registering Direct Method callback failed.\n";
+	}
 
 	// Overwrite strings with 0 in memory since we don't know when the RAM is gonna be used by something else
 	memset((void*)connectionString.data(), 0, connectionString.size());
 	memset((void*)storage_connection_string.data(), 0, storage_connection_string.size());
 	memset((void*)storage_acc_name.data(), 0, storage_acc_name.size());
 	memset((void*)container_name.data(), 0, container_name.size());
+    memset((void*)firmware_update_container.data(), 0, firmware_update_container.size());
 	// For each JSON value, get a pointer and overwrite the memory with 0
 	auto ptr = devSettings["ConnectionString"].get_ptr<nlohmann::json::string_t*>();
 	memset((void*)ptr->data(), 0, ptr->size());
@@ -59,23 +71,61 @@ Device::Device(const std::string& configFile)
 	memset((void*)ptr->data(), 0, ptr->size());
 	ptr = devSettings["StorageAccount"].get_ptr<nlohmann::json::string_t*>();
 	memset((void*)ptr->data(), 0, ptr->size());
-	ptr = devSettings["StorageContainer"].get_ptr<nlohmann::json::string_t*>();
-	memset((void*)ptr->data(), 0, ptr->size());
+    ptr = devSettings["StorageContainer"].get_ptr<nlohmann::json::string_t*>();
+    memset((void*)ptr->data(), 0, ptr->size());
+    ptr = devSettings["FwUpdateContainer"].get_ptr<nlohmann::json::string_t*>();
+    memset((void*)ptr->data(), 0, ptr->size());
+    ptr = devSettings["PublicKeyUrl"].get_ptr<nlohmann::json::string_t*>();
+    memset((void*)ptr->data(), 0, ptr->size());
 	// Reassign each value of the JSON object an empty string because the object still thinks we have full sized strings in memory and won't free our memory
 	devSettings["ConnectionString"] = "";
 	devSettings["StorageConnectionString"] = "";
-	devSettings["StorageAccount"] = "";
-	devSettings["StorageContainer"] = "";
+    devSettings["StorageAccount"] = "";
+    devSettings["StorageContainer"] = "";
+    devSettings["FwUpdateContainer"] = "";
+    devSettings["PublicKeyUrl"] = "";
 }
 
 Device::~Device()
 {
 	// Pub Sub detach
-	camera->NewCaptureUploaded.Detach(this);
+//	camera->NewCaptureUploaded.Detach(this);
 }
 
+int Device::DeviceMethodCallback(const char *method_name, const unsigned char *payload, size_t size, unsigned char **response, size_t *resp_size, void *userContextCallback) {
+    // Convert method name to string
+    std::string method = std::string{method_name};
+    // If method is firmwareUpdate, initiate firmware update
+    if(method.compare("firmwareUpdate") == 0) {
+        // Get JSON payload
+        nlohmann::json fw_data = nlohmann::json::parse(std::string((char*)payload, size));
+        std::string blob = fw_data["blobUrl"];
+        std::string fileName = fw_data["fileName"];
 
+        std::cout << "\nInitiate Firmware Update\n";
+        // Download data
+        Device* device = (Device*)userContextCallback;
+        device->FirmwareUpdate(blob, fileName);
+    }
 
+    // Respond to method
+    char* RESPONSE_STRING = (char*)"{ \"Response\": \"This is the response from the device\" }";
+    int status = 200;
+    std::cout << "Response status:  " << status << std::endl;
+    std::cout << "Response payload: " << RESPONSE_STRING << std::endl;
+
+    *resp_size = strlen(RESPONSE_STRING);
+    if ((*response = (unsigned char*)malloc(*resp_size)) == NULL)
+        status = -1;
+    else
+        memcpy(*response, RESPONSE_STRING, *resp_size);
+
+    return status;
+}
+
+void Device::FirmwareUpdate(std::string blobUrl, std::string fileName) {
+    this->firmwareUpdateHandler->HandleFirmwareUpdate(blobUrl, fileName, publicKeyUrl);
+}
 // Pub Sub interface
 void Device::OnNotification(Publisher* context)
 {
@@ -104,7 +154,7 @@ void Device::OnNotification(Publisher* context)
 
 void Device::SubscribeNotifications()
 {
-	camera->NewCaptureUploaded.Attach(this);
+//	camera->NewCaptureUploaded.Attach(this);
 }
 
 
@@ -121,14 +171,14 @@ bool Device::UpdateSettings(std::string msgbody)
 	settings->Report();
 	settings->Deserialize(msgbody);
 
-	// Update camera settings
-	//
-	SetCameraPruValues(); // Assertion: settings is updated before this call
-
-	if(camera->setGain(settings->getGain()) == false)
-		return false;
-	if(camera->setExposure(settings->getExposure()) == false)
-		return false;
+//	// Update camera settings
+//	//
+//	SetCameraPruValues(); // Assertion: settings is updated before this call
+//
+//	if(camera->setGain(settings->getGain()) == false)
+//		return false;
+//	if(camera->setExposure(settings->getExposure()) == false)
+//		return false;
 
 	std::cout << "\nnew settings:" << std::endl;
 	settings->Report();
@@ -151,8 +201,8 @@ std::string Device::getDeviceId(const std::string& connectionString)
 
 void Device::StartCamera()
 {
-	SetCameraPruValues();
-	camera->Start();
+//	SetCameraPruValues();
+//	camera->Start();
 }
 
 void Device::SetCameraPruValues()
@@ -203,7 +253,7 @@ void Device::SetCameraPruValues()
 
 void Device::StopCamera()
 {
-	camera->Stop();
+//	camera->Stop();
 }
 
 IOTHUBMESSAGE_DISPOSITION_RESULT Device::Start()

@@ -4,7 +4,7 @@
 int main(int argc, char** argv)
 {
 	int opt;
-    std::string configFile;
+    std::string configFile = "";
     bool useFile = false;
 	while((opt = getopt(argc, argv, "f:")) != -1) {
 		switch (opt) {
@@ -30,7 +30,7 @@ int main(int argc, char** argv)
 		}
 
 	}
-	Device* d = new Device();
+	Device* d = new Device(configFile);
 	d->SubscribeNotifications();
 
 	// Full state test

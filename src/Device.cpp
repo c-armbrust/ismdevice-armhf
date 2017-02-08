@@ -19,7 +19,6 @@ Device::Device(const std::string& configFile)
 	// Declare device settings variable
 	nlohmann::json devSettings;
 	if (configFile == "") {
-		std::cout << "Using deh\n";
 		// Variables for the decrypted JSON settings
 		unsigned char* jsonString;
 		int jsonLength;
@@ -28,9 +27,8 @@ Device::Device(const std::string& configFile)
 		// Parse JSON
 		devSettings = nlohmann::json::parse(jsonString);
 	} else {
-		std::cout << "Reading from " << configFile << "\n";
 		std::ifstream ifs(configFile);
-		devSettings = nlohmann::json(ifs);
+		devSettings = nlohmann::json::parse(ifs);
 	}
 	// Fill into string variables
 	std::string connectionString = devSettings["ConnectionString"];

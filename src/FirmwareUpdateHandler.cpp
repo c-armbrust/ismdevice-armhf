@@ -32,6 +32,7 @@ void FirmwareUpdateHandler::HandleFirmwareUpdate(std::string blobUrl, std::strin
     std::cout << "-----------------------------------------------\n";
     std::cout << "----------- Extract firmware update -----------\n";
     std::cout << "-----------------------------------------------\n";
+    // The firmware update will be extracted to /home/debian/.fwtmp
     r = system("/home/debian/ism-device-scripts/xfwupdate.sh");
     // If it doesn't return with success
     if (r != 0) {
@@ -42,7 +43,7 @@ void FirmwareUpdateHandler::HandleFirmwareUpdate(std::string blobUrl, std::strin
     std::cout << "-----------------------------------------------\n";
     std::cout << "------------ Apply firmware update ------------\n";
     std::cout << "-----------------------------------------------\n";
-    system("setsid /home/debian/fwupdate/data/apply.sh >/home/debian/fwupdate/logfile 2>&1 &");
+    system("setsid /home/debian/.fwtmp/apply.sh >/home/debian/.fwtmp/logfile 2>&1 &");
     // Shut down this program
     exit(0);
 }

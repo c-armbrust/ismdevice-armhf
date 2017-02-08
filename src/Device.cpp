@@ -13,20 +13,29 @@ extern "C" {
 	#include "crypto.h"
 }
 
-Device::Device()
+Device::Device(const std::string& configFile)
 {
-	// Variables for the decrypted JSON settings
-	unsigned char* jsonString;
-	int jsonLength;
-	// Decrypt device settings using TPM
-	DeviceCrypto_Decrypt((char*)"settings", &jsonString, &jsonLength);
-	// Parse JSON
-	nlohmann::json devSettings = nlohmann::json::parse(jsonString);
+	// Declare device settings variable
+	nlohmann::json devSettings;
+	if (configFile == "") {
+		std::cout << "Using deh\n";
+		// Variables for the decrypted JSON settings
+		unsigned char* jsonString;
+		int jsonLength;
+		// Decrypt device settings using TPM
+		DeviceCrypto_Decrypt((char*)"settings", &jsonString, &jsonLength);
+		// Parse JSON
+		devSettings = nlohmann::json::parse(jsonString);
+	} else {
+		std::cout << "Reading from " << configFile << "\n";
+		std::ifstream ifs(configFile);
+		devSettings = nlohmann::json(ifs);
+	}
 	// Fill into string variables
 	std::string connectionString = devSettings["ConnectionString"];
 	std::string storage_connection_string = devSettings["StorageConnectionString"];
 	std::string storage_acc_name = devSettings["StorageAccount"];
-	std::string container_name = devSettings["storageContainer"];
+	std::string container_name = devSettings["StorageContainer"];
 	// Start Device initialization
 	_state = &Singleton<ReadyState>::Instance();
 	platform_init();
@@ -50,13 +59,13 @@ Device::Device()
 	memset((void*)ptr->data(), 0, ptr->size());
 	ptr = devSettings["StorageAccount"].get_ptr<nlohmann::json::string_t*>();
 	memset((void*)ptr->data(), 0, ptr->size());
-	ptr = devSettings["storageContainer"].get_ptr<nlohmann::json::string_t*>();
+	ptr = devSettings["StorageContainer"].get_ptr<nlohmann::json::string_t*>();
 	memset((void*)ptr->data(), 0, ptr->size());
 	// Reassign each value of the JSON object an empty string because the object still thinks we have full sized strings in memory and won't free our memory
 	devSettings["ConnectionString"] = "";
 	devSettings["StorageConnectionString"] = "";
 	devSettings["StorageAccount"] = "";
-	devSettings["storageContainer"] = "";
+	devSettings["StorageContainer"] = "";
 }
 
 Device::~Device()

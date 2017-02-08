@@ -1,8 +1,35 @@
 #include <iostream>
 #include "Device.h"
 
-int main()
+int main(int argc, char** argv)
 {
+	int opt;
+    std::string configFile;
+    bool useFile = false;
+	while((opt = getopt(argc, argv, "f:")) != -1) {
+		switch (opt) {
+			case 'f': {
+				configFile = optarg;
+                useFile = true;
+				std::cout << "Reading from file " << configFile << std::endl;
+				break;
+			}
+			case '?': {
+				if (optopt == 'f')
+					std::cerr << "Option -f requires an argument.\n";
+				else if (isprint (optopt))
+					std::cerr << "Unknown option '-" << (char)optopt << "'\n";
+				else
+					fprintf (stderr,
+							 "Unknown option character `\\x%x'.\n",
+							 optopt);
+				return 1;
+			}
+			default:
+				break;
+		}
+
+	}
 	Device* d = new Device();
 	d->SubscribeNotifications();
 
@@ -36,5 +63,5 @@ int main()
 	{
 		ThreadAPI_Sleep(1000);
 	}
-return 0;
+    return 0;
 }

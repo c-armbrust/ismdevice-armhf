@@ -22,7 +22,7 @@ class DeviceSettings;
 class Device : public Subscriber
 {
 public:
-	Device();
+	Device(const std::string& configFile = "");
 	~Device();
 	IOTHUBMESSAGE_DISPOSITION_RESULT Start();
 	IOTHUBMESSAGE_DISPOSITION_RESULT Stop();

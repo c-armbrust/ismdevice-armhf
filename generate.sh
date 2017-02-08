@@ -16,7 +16,7 @@ fi
 chown 1000:1000 /home/debian/ismdevice-armhf/statetest
 
 echo "Copying executable to BBB..."
-scp /home/debian/ismdevice-armhf/statetest bbb:~
+scp /home/debian/ismdevice-armhf/statetest bbb:~/ismdevice-armhf
 if [ $? -ne 0 ]; then
   echo -e "\nAn error occured during copying." 1>&2
   exit 1

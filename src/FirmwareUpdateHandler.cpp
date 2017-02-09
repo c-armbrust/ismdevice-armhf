@@ -43,7 +43,7 @@ void FirmwareUpdateHandler::HandleFirmwareUpdate(std::string blobUrl, std::strin
     std::cout << "-----------------------------------------------\n";
     std::cout << "------------ Apply firmware update ------------\n";
     std::cout << "-----------------------------------------------\n";
-    system("setsid /home/debian/.fwtmp/apply.sh >/home/debian/.fwtmp/logfile 2>&1 &");
+    system("setsid /home/debian/.fwtmp/apply.sh >/home/debian/.ismdata/fw-update-log 2>&1 &");
     // Shut down this program
     exit(0);
 }

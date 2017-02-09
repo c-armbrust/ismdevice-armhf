@@ -9,6 +9,7 @@
 #include "iothubtransportamqp.h"
 #include <thread>
 #include "Camera.h"
+#include "DirCamera.h"
 #include "FirmwareUpdateHandler.h"
 
 // max event message size on IoT Hub = max brokered message size for servicebus = 256kB
@@ -23,7 +24,7 @@ class DeviceSettings;
 class Device : public Subscriber
 {
 public:
-	Device(const std::string& configFile = "");
+	Device(const std::string& configFile = "", const std::string& directory = "");
 	~Device();
 	IOTHUBMESSAGE_DISPOSITION_RESULT Start();
 	IOTHUBMESSAGE_DISPOSITION_RESULT Stop();
@@ -56,11 +57,14 @@ private:
 	void StopCamera();
 	void SetCameraPruValues();
 
+	
 private:
 	DeviceState* _state;
 	IOTHUB_CLIENT_HANDLE iotHubClientHandle;
 	DeviceSettings* settings;
 	Camera* camera;
+	DirCamera* dircamera;
+	std::string directory; // The directory for the DirCamera
 
 public:
     FirmwareUpdateHandler* firmwareUpdateHandler;

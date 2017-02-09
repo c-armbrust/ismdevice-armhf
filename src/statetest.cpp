@@ -5,12 +5,12 @@ int main(int argc, char** argv)
 {
 	int opt;
     std::string configFile = "";
-    bool useFile = false;
+	std::string directory = "";
+	
 	while((opt = getopt(argc, argv, "f:")) != -1) {
 		switch (opt) {
 			case 'f': {
 				configFile = optarg;
-                useFile = true;
 				std::cout << "Reading from file " << configFile << std::endl;
 				break;
 			}
@@ -30,7 +30,30 @@ int main(int argc, char** argv)
 		}
 
 	}
-	Device* d = new Device(configFile);
+
+	while((opt = getopt(argc, argv, "c:")) != -1) {
+		switch(opt) {
+			case 'c': {
+				directory = optarg;
+				std::cout << "Simulating cam from directory " << directory << std::endl;
+				break;
+			}
+			case '?': {
+				if(optopt == 'c')
+					std::cerr << "Option -c requires an argument.\n";
+				else if (isprint(optopt))
+					std::cerr << "Unknown option '-" << (char)optopt << "'\n";
+				else
+					fprintf(stderr, 
+							"Unknown option character `\\x%x'.\n",
+							optopt);
+				return 1;
+			}
+			default:
+				break;
+		}
+	}
+	Device* d = new Device(configFile, directory);
 	d->SubscribeNotifications();
 
 	// Full state test

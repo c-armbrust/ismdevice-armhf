@@ -14,8 +14,9 @@ extern "C" {
 	#include "crypto.h"
 }
 
-Device::Device(const std::string& configFile)
+Device::Device(const std::string& configFile, const std::string& directory)
 {
+	this->directory = directory;
 	// Declare device settings variable
 	nlohmann::json devSettings;
 	if (configFile == "") {
@@ -43,18 +44,38 @@ Device::Device(const std::string& configFile)
 	_state = &Singleton<ReadyState>::Instance();
 	platform_init();
 	iotHubClientHandle = IoTHubClient_CreateFromConnectionString(connectionString.c_str(), MQTT_Protocol);
-//	camera = new Camera(storage_connection_string, container_name, storage_acc_name);
-//	camera->GetCameraInfo();
+	if(directory == "") 
+	{
+		camera = new Camera(storage_connection_string, container_name, storage_acc_name);
+		camera->GetCameraInfo();
+	}
+	else
+	{
+		dircamera = new DirCamera(storage_connection_string, container_name, storage_acc_name, directory);
+		dircamera->GetCameraInfo();
+	}
+
     firmwareUpdateHandler = new FirmwareUpdateHandler(storage_connection_string, "fwupdates", storage_acc_name);
+
+	int cameraGain = 0;
+	double cameraExposure = 0.0;
+	if(directory == "")
+	{
+		cameraGain = camera->getGain();
+		cameraExposure = camera->getExposure();
+	}
+	
 	settings = new DeviceSettings(this->getDeviceId(connectionString), _state->getStateName(), 5000, "", // std::string DeviceId, std::string StateName, int CapturePeriod, std::string CurrentCaptureUri
 								  0.0025, 8.5, 3.75, 4, 16, // double VarianceThreshold, double DistanceMapThreshold, double RGThreshold, double RestrictedFillingThreshold, double DilateValue
-								  10, 10.0,//camera->getGain(), camera->getExposure(), // int Gain, double Exposure
+								  cameraGain, cameraExposure, // int Gain, double Exposure
 								  4, 0, 1000); // int PulseWidth, int Current, int Predelay
 
+/*
 	// Register direct method callback
 	if (IoTHubClient_SetDeviceMethodCallback(iotHubClientHandle, Device::DeviceMethodCallback, this) != IOTHUB_CLIENT_OK) {
 		std::cout << "Error! Registering Direct Method callback failed.\n";
 	}
+*/
 
 	// Overwrite strings with 0 in memory since we don't know when the RAM is gonna be used by something else
 	memset((void*)connectionString.data(), 0, connectionString.size());
@@ -87,7 +108,10 @@ Device::Device(const std::string& configFile)
 Device::~Device()
 {
 	// Pub Sub detach
-//	camera->NewCaptureUploaded.Detach(this);
+	if(directory == "")
+		camera->NewCaptureUploaded.Detach(this);
+	else
+		dircamera->NewCaptureUploaded.Detach(this);
 }
 
 int Device::DeviceMethodCallback(const char *method_name, const unsigned char *payload, size_t size, unsigned char **response, size_t *resp_size, void *userContextCallback) {
@@ -152,7 +176,10 @@ void Device::OnNotification(Publisher* context)
 
 void Device::SubscribeNotifications()
 {
-//	camera->NewCaptureUploaded.Attach(this);
+	if(directory == "")
+		camera->NewCaptureUploaded.Attach(this);
+	else
+		dircamera->NewCaptureUploaded.Attach(this); 
 }
 
 
@@ -169,14 +196,21 @@ bool Device::UpdateSettings(std::string msgbody)
 	settings->Report();
 	settings->Deserialize(msgbody);
 
-//	// Update camera settings
-//	//
-//	SetCameraPruValues(); // Assertion: settings is updated before this call
-//
-//	if(camera->setGain(settings->getGain()) == false)
-//		return false;
-//	if(camera->setExposure(settings->getExposure()) == false)
-//		return false;
+	if(directory == "")
+	{
+		// Update camera settings
+		//
+		SetCameraPruValues(); // Assertion: settings is updated before this call
+
+		if(camera->setGain(settings->getGain()) == false)
+			return false;
+		if(camera->setExposure(settings->getExposure()) == false)
+			return false;
+	}
+	else // DirCamera needs no PRU values, just a capture period
+	{
+		dircamera->setCapturePeriod(settings->getCapturePeriod());
+	}
 
 	std::cout << "\nnew settings:" << std::endl;
 	settings->Report();
@@ -199,8 +233,16 @@ std::string Device::getDeviceId(const std::string& connectionString)
 
 void Device::StartCamera()
 {
-//	SetCameraPruValues();
-//	camera->Start();
+	if(directory == "")
+	{
+		SetCameraPruValues();
+		camera->Start();
+	}	
+	else
+	{
+		dircamera->setCapturePeriod(settings->getCapturePeriod());
+		dircamera->Start();
+	}
 }
 
 void Device::SetCameraPruValues()
@@ -251,7 +293,10 @@ void Device::SetCameraPruValues()
 
 void Device::StopCamera()
 {
-//	camera->Stop();
+	if(directory == "")
+		camera->Stop();
+	else
+		dircamera->Stop();
 }
 
 IOTHUBMESSAGE_DISPOSITION_RESULT Device::Start()

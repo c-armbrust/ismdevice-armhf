@@ -7,6 +7,10 @@ DirCamera::DirCamera(utility::string_t stoconnstr, utility::string_t containerna
 
 	InitBlobStorage();
 	InitCamera();
+	
+	std::cout << "storage account: " << storageAccountName << std::endl;
+	std::cout << "containername: " << containerName << std::endl;
+	std::cout << "directory: " << directory << std::endl;
 }
 
 DirCamera::~DirCamera()
@@ -69,7 +73,9 @@ void DirCamera::InitCamera()
 	}
 	while((dirp = readdir(dp)) != nullptr)
 	{
-		captures.push_back(std::string(dirp->d_name));
+		std::string fn = std::string(dirp->d_name);
+		if(fn.find(".jpg") != std::string::npos)
+			captures.push_back(directory + "/" + fn);
 	}
 	closedir(dp);
 	
@@ -124,6 +130,9 @@ void DirCamera::UploadCaptureToBlobStorage(std::string filename)
 		// Delete local file
 		std::remove(filename.c_str());
 
+		    std::cout << "storage account: " << std::string{storageAccountName} << std::endl;
+    std::cout << "containername: " << std::string{containerName} << std::endl;
+    std::cout << "directory: " << directory << std::endl;
 		std::string uri = "https://" + storageAccountName + ".blob.core.windows.net/" + containerName + "/" + filename;
 
 		// Set CaptureNotification

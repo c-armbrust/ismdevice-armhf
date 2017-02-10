@@ -80,18 +80,18 @@ Device::Device(const std::string& configFile, const std::string& directory)
 	// Overwrite strings with 0 in memory since we don't know when the RAM is gonna be used by something else
 	memset((void*)connectionString.data(), 0, connectionString.size());
 	memset((void*)storage_connection_string.data(), 0, storage_connection_string.size());
-	memset((void*)storage_acc_name.data(), 0, storage_acc_name.size());
-	memset((void*)container_name.data(), 0, container_name.size());
+	//memset((void*)storage_acc_name.data(), 0, storage_acc_name.size());
+	//memset((void*)container_name.data(), 0, container_name.size());
     memset((void*)firmware_update_container.data(), 0, firmware_update_container.size());
 	// For each JSON value, get a pointer and overwrite the memory with 0
 	auto ptr = devSettings["ConnectionString"].get_ptr<nlohmann::json::string_t*>();
 	memset((void*)ptr->data(), 0, ptr->size());
 	ptr = devSettings["StorageConnectionString"].get_ptr<nlohmann::json::string_t*>();
 	memset((void*)ptr->data(), 0, ptr->size());
-	ptr = devSettings["StorageAccount"].get_ptr<nlohmann::json::string_t*>();
-	memset((void*)ptr->data(), 0, ptr->size());
-    ptr = devSettings["StorageContainer"].get_ptr<nlohmann::json::string_t*>();
-    memset((void*)ptr->data(), 0, ptr->size());
+	//ptr = devSettings["StorageAccount"].get_ptr<nlohmann::json::string_t*>();
+	//memset((void*)ptr->data(), 0, ptr->size());
+    //ptr = devSettings["StorageContainer"].get_ptr<nlohmann::json::string_t*>();
+    //memset((void*)ptr->data(), 0, ptr->size());
     ptr = devSettings["FwUpdateContainer"].get_ptr<nlohmann::json::string_t*>();
     memset((void*)ptr->data(), 0, ptr->size());
     ptr = devSettings["PublicKeyUrl"].get_ptr<nlohmann::json::string_t*>();
@@ -99,8 +99,8 @@ Device::Device(const std::string& configFile, const std::string& directory)
 	// Reassign each value of the JSON object an empty string because the object still thinks we have full sized strings in memory and won't free our memory
 	devSettings["ConnectionString"] = "";
 	devSettings["StorageConnectionString"] = "";
-    devSettings["StorageAccount"] = "";
-    devSettings["StorageContainer"] = "";
+    //devSettings["StorageAccount"] = "";
+    //devSettings["StorageContainer"] = "";
     devSettings["FwUpdateContainer"] = "";
     devSettings["PublicKeyUrl"] = "";
 }

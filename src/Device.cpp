@@ -123,10 +123,13 @@ int Device::DeviceMethodCallback(const char *method_name, const unsigned char *p
 		else
 			memcpy(*response, RESPONSE_STRING, *resp_size);
 
-
-        // Download data
-        Device* device = (Device*)userContextCallback;
-        device->FirmwareUpdate(blob, fileName);
+		// Run firmware update in new Thread
+		Device* device = (Device*)userContextCallback;
+		std::thread t([&](std::string blob_t, std::string fileName_t, Device* d){
+			d->FirmwareUpdate(blob_t, fileName_t);
+		}, blob, fileName, device);
+		t.detach();
+		// Return status
 		return status;
     }
 	// Respond to method

@@ -3,6 +3,7 @@
 //
 
 #include <stdlib.h>
+#include <azure_c_shared_utility/threadapi.h>
 #include "iothub_client.h"
 #include "FirmwareUpdateHandler.h"
 #include "json.hpp"
@@ -15,6 +16,8 @@ FirmwareUpdateHandler::FirmwareUpdateHandler(utility::string_t stoconnstr, utili
 }
 
 void FirmwareUpdateHandler::HandleFirmwareUpdate(std::string blobUrl, std::string fileName, std::string publicKeyUrl) {
+    // Sleep so the direct method handler can return a status
+    ThreadAPI_Sleep(2000);
     // Download firmware update file.
     this->DownloadFirmwareUpdate(blobUrl, fileName);
 

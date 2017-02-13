@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # This script will issue the make command and then copy the created binary to the bbb.
 # It will use the host bbb for copying, so make sure you edited the host file, e.g.:
 #Host bbb

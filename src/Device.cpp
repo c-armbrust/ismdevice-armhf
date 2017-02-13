@@ -9,7 +9,7 @@
 #include <exception>
 #include <iothubtransportmqtt.h>
 #include "FirmwareUpdateHandler.h"
-
+#include <sys/stat.h>
 extern "C" {
 	#include "crypto.h"
 }
@@ -55,7 +55,18 @@ Device::Device(const std::string& configFile)
 	if (IoTHubClient_SetDeviceMethodCallback(iotHubClientHandle, Device::DeviceMethodCallback, this) != IOTHUB_CLIENT_OK) {
 		std::cout << "Error! Registering Direct Method callback failed.\n";
 	}
-	this->SendD2C_FwUpdateStatus(CommandType::FIRMWARE_UPDATE_STATUS, "Firmware update completed.");
+
+	struct stat sb;
+	if (stat("/home/debian/.fwtmp", &sb) == 0 && S_ISDIR(sb.st_mode))
+	{
+		// Directory ~/.fwtmp exists, which means we just restarted after initiating a firmware update
+		int retval = system("rm -rf /home/debian/.fwtmp");
+		if (retval != 0) {
+			std::cout << "Error! Cloudn't delete temporary firmware update directory";
+		}
+		this->SendD2C_FwUpdateStatus(CommandType::FIRMWARE_UPDATE_STATUS, "Firmware update completed");
+	}
+
 	// Overwrite strings with 0 in memory since we don't know when the RAM is gonna be used by something else
 	memset((void*)connectionString.data(), 0, connectionString.size());
 	memset((void*)storage_connection_string.data(), 0, storage_connection_string.size());

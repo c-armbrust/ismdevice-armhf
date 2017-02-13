@@ -58,7 +58,7 @@ void FirmwareUpdateHandler::DownloadFirmwareUpdate(std::string blobUrl, std::str
 
 void FirmwareUpdateHandler::HandleFirmwareUpdateError(std::string error) {
     std::cout << "Error during firmware update: " << error << std::endl;
-    std::cout << "---------- Verification unsuccessful ----------\n";
+    std::cout << "---------- Firmware Update unsuccessful ----------\n";
 }
 
 void FirmwareUpdateHandler::InitBlobStorage(utility::string_t storageConnectionString)

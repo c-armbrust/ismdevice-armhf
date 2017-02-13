@@ -112,24 +112,34 @@ int Device::DeviceMethodCallback(const char *method_name, const unsigned char *p
         std::string fileName = fw_data["fileName"];
 
         std::cout << "\nInitiate Firmware Update\n";
+
+		// Respond to method
+		char* RESPONSE_STRING = (char*)"{ \"Response\": \"Initiating Firmware Update\" }";
+		int status = 200;
+
+		*resp_size = strlen(RESPONSE_STRING);
+		if ((*response = (unsigned char*)malloc(*resp_size)) == NULL)
+			status = -1;
+		else
+			memcpy(*response, RESPONSE_STRING, *resp_size);
+
+
         // Download data
         Device* device = (Device*)userContextCallback;
         device->FirmwareUpdate(blob, fileName);
+		return status;
     }
+	// Respond to method
+	char* RESPONSE_STRING = (char*)"{ \"Response\": \"Unknown function called\" }";
+	int status = 404;
+	*resp_size = strlen(RESPONSE_STRING);
+	if ((*response = (unsigned char*)malloc(*resp_size)) == NULL)
+		status = -1;
+	else
+		memcpy(*response, RESPONSE_STRING, *resp_size);
+	return status;
 
-    // Respond to method
-    char* RESPONSE_STRING = (char*)"{ \"Response\": \"This is the response from the device\" }";
-    int status = 200;
-    std::cout << "Response status:  " << status << std::endl;
-    std::cout << "Response payload: " << RESPONSE_STRING << std::endl;
 
-    *resp_size = strlen(RESPONSE_STRING);
-    if ((*response = (unsigned char*)malloc(*resp_size)) == NULL)
-        status = -1;
-    else
-        memcpy(*response, RESPONSE_STRING, *resp_size);
-
-    return status;
 }
 
 void Device::FirmwareUpdate(std::string blobUrl, std::string fileName) {
@@ -384,8 +394,12 @@ void Device::SendD2C_FwUpdateStatus(std::string cmdType, std::string status)
 	std::thread t([&](std::string commandType, std::string stat){
 		try
 		{
+			std::ifstream logFile("/home/debian/.ismdata/fw-update-log");
+			std::string logData((std::istreambuf_iterator<char>(logFile)), std::istreambuf_iterator<char>());
 			nlohmann::json obj = {
-					{"FwUpdateStatus", stat}
+					{"DeviceId", this->settings->getDeviceId()},
+					{"FwUpdateStatus", stat},
+					{"Log", logData}
 			};
 			IOTHUB_MESSAGE_HANDLE messageHandle;
 			char sendBuffer[MAX_SEND_BUFFER_SIZE];

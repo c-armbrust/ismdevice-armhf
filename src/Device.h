@@ -52,6 +52,7 @@ private:
 	static IOTHUBMESSAGE_DISPOSITION_RESULT ReceiveMessageCallback(IOTHUB_MESSAGE_HANDLE, void*);
 	static void SendConfirmationCallback(IOTHUB_CLIENT_CONFIRMATION_RESULT, void*);
 	void SendD2C_DeviceSettings(std::string);
+	void SendD2C_FwUpdateStatus(std::string, std::string);
 	void StartCamera();
 	void StopCamera();
 	void SetCameraPruValues();

@@ -17,6 +17,7 @@ const std::string CommandType::SET_DEVICE_SETTINGS{"SetDeviceSettings"};
 */
 const std::string CommandType::CAPTURE_UPLOADED{"CaptureUploaded"};
 const std::string CommandType::UPDATE_DASHBOARD_CONTROLS{"UpdateDashboardControls"};
+const std::string CommandType::FIRMWARE_UPDATE_STATUS{"FirmwareUpdateStatus"};
 
 const std::string CommandStatus::SUCCESS{"Success"};
 const std::string CommandStatus::FAILURE{"Failure"};

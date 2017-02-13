@@ -40,6 +40,7 @@ public:
 
 	// D2C Dashboard Commands
 	static const std::string UPDATE_DASHBOARD_CONTROLS;
+	static const std::string FIRMWARE_UPDATE_STATUS;
 };
 
 

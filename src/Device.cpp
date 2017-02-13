@@ -55,7 +55,7 @@ Device::Device(const std::string& configFile)
 	if (IoTHubClient_SetDeviceMethodCallback(iotHubClientHandle, Device::DeviceMethodCallback, this) != IOTHUB_CLIENT_OK) {
 		std::cout << "Error! Registering Direct Method callback failed.\n";
 	}
-
+	this->SendD2C_FwUpdateStatus(CommandType::FIRMWARE_UPDATE_STATUS, "Firmware update completed.");
 	// Overwrite strings with 0 in memory since we don't know when the RAM is gonna be used by something else
 	memset((void*)connectionString.data(), 0, connectionString.size());
 	memset((void*)storage_connection_string.data(), 0, storage_connection_string.size());
@@ -366,7 +366,41 @@ void Device::SendD2C_DeviceSettings(std::string cmdType)
 
 	t.detach();
 }
+// Look how to pass parameter to the threads lambda:
+// http://stackoverflow.com/questions/25536956/how-to-write-lambda-function-with-arguments-c
+void Device::SendD2C_FwUpdateStatus(std::string cmdType, std::string status)
+{
+	std::thread t([&](std::string commandType, std::string stat){
+		try
+		{
+			nlohmann::json obj = {
+					{"FwUpdateStatus", stat}
+			};
+			IOTHUB_MESSAGE_HANDLE messageHandle;
+			char sendBuffer[MAX_SEND_BUFFER_SIZE];
 
+			// fill send buffer
+			sprintf_s(sendBuffer, MAX_SEND_BUFFER_SIZE, obj.dump().c_str());
+			messageHandle = IoTHubMessage_CreateFromByteArray((const unsigned char*)sendBuffer, strlen(sendBuffer));
+
+			// set event properties
+			MAP_HANDLE propMap = IoTHubMessage_Properties(messageHandle);
+			Map_AddOrUpdate(propMap, EventType::D2C_COMMAND.c_str(), commandType.c_str());
+
+			std::cout << "send message, size=" << strlen(sendBuffer) << std::endl;
+			std::cout << "CommandType: " << commandType << std::endl;
+
+			// send the message
+			IoTHubClient_SendEventAsync(iotHubClientHandle, messageHandle, SendConfirmationCallback, this);
+		}
+		catch(std::exception& e)
+		{
+			std::cout << e.what() << std::endl;
+		}
+	}, cmdType, status);
+
+	t.detach();
+}
 
 void Device::SendConfirmationCallback(IOTHUB_CLIENT_CONFIRMATION_RESULT result, void* userContextCallback)
 {

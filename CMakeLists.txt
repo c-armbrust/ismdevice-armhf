@@ -3,7 +3,7 @@ project(ismdevice)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/inc)
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib)
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -g")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11")
 
 add_executable(statetest src/statetest.cpp src/PubSub.cpp src/Device.cpp src/Commands.cpp src/Camera.cpp src/FirmwareUpdateHandler.cpp src/FirmwareUpdateHandler.h src/DirCamera.cpp src/DirCamera.h)

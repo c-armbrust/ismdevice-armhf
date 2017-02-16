@@ -57,6 +57,7 @@ void DirCamera::HandleCaptures()
 			
 			
 		std::this_thread::sleep_for(std::chrono::seconds(capturePeriod));
+		std::cout << "running: " << this->running << std::endl;
 	}
 }
 
@@ -121,19 +122,18 @@ void DirCamera::UploadCaptureToBlobStorage(std::string filename)
 {
 	try
 	{
-		// Retrieve reference to a blob named <filename>.
-		azure::storage::cloud_block_blob blockBlob = container.get_block_blob_reference(filename);
+		// Retrieve reference to a blob named <filename> without the path.
+		std::string blobname = filename.substr(filename.find_last_of("/"), filename.length() - filename.find_last_of("/"));
+		azure::storage::cloud_block_blob blockBlob = container.get_block_blob_reference(blobname);
 
 		// Create or overwrite the <filename> blob with contents from a local file.
 		blockBlob.upload_from_file(utility::string_t{filename});
 
-		// Delete local file
-		std::remove(filename.c_str());
 
 		    std::cout << "storage account: " << std::string{storageAccountName} << std::endl;
     std::cout << "containername: " << std::string{containerName} << std::endl;
     std::cout << "directory: " << directory << std::endl;
-		std::string uri = "https://" + storageAccountName + ".blob.core.windows.net/" + containerName + "/" + filename;
+		std::string uri = "https://" + storageAccountName + ".blob.core.windows.net/" + containerName + blobname;
 
 		// Set CaptureNotification
 		CaptureNotification notification(uri);

@@ -123,20 +123,14 @@ void DirCamera::UploadCaptureToBlobStorage(std::string filename)
 	try
 	{
 		// Retrieve reference to a blob named <filename> without the path.
-		std::string blobname = filename.substr(filename.find_last_of("/"), filename.length() - filename.find_last_of("/"));
+		std::string blobname = filename.substr(filename.find_last_of("/") + 1, filename.length() - filename.find_last_of("/"));
 		azure::storage::cloud_block_blob blockBlob = container.get_block_blob_reference(blobname);
 
 		// Create or overwrite the <filename> blob with contents from a local file.
 		blockBlob.upload_from_file(utility::string_t{filename});
 
-
-		    std::cout << "storage account: " << std::string{storageAccountName} << std::endl;
-    std::cout << "containername: " << std::string{containerName} << std::endl;
-    std::cout << "directory: " << directory << std::endl;
-		std::string uri = "https://" + storageAccountName + ".blob.core.windows.net/" + containerName + blobname;
-
 		// Set CaptureNotification
-		CaptureNotification notification(uri);
+		CaptureNotification notification(blobname);
 		NewCaptureUploaded.SetNotification(&notification);
 		// Notify all subscribers
 		NewCaptureUploaded.Notify();

@@ -51,8 +51,9 @@ void Camera::UploadCaptureToBlobStorage(std::string filename)
 {
 	try
 	{
+		std::string blobname = filename.substr(filename.find_last_of("/"), filename.length() - filename.find_last_of("/"));
 		// Retrieve reference to a blob named <filename>.
-		azure::storage::cloud_block_blob blockBlob = container.get_block_blob_reference(filename);
+		azure::storage::cloud_block_blob blockBlob = container.get_block_blob_reference(blobname);
 
 		// Create or overwrite the <filename> blob with contents from a local file.
 		blockBlob.upload_from_file(utility::string_t{filename});
@@ -60,10 +61,8 @@ void Camera::UploadCaptureToBlobStorage(std::string filename)
 		// Delete local file
 		std::remove(filename.c_str());
 
-		std::string uri = "https://" + storageAccountName + ".blob.core.windows.net/" + containerName + "/" + filename;
-
 		// Set CaptureNotification
-		CaptureNotification notification(uri);
+		CaptureNotification notification(blobname);
 		NewCaptureUploaded.SetNotification(&notification);
 		// Notify all subscribers
 		NewCaptureUploaded.Notify();

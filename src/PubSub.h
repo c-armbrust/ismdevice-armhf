@@ -41,7 +41,7 @@ class CaptureNotification : public Notification// notification type to notify ca
 {
 public:
 	CaptureNotification(std::string uri);
-	std::string CurrentCaptureUri;
+	std::string CurrentCaptureName;
 };
 
 class CaptureNotificationPublisher : public Publisher // publishes uploaded to blob storage notifications

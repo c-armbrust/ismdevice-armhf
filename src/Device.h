@@ -175,7 +175,7 @@ public:
 	inline std::string getDeviceId() {return DeviceId;}
 	inline std::string getStateName() {return StateName;}
 	inline int getCapturePeriod() {return CapturePeriod;}
-	inline std::string getCurrentCaptureUri() {return CurrentCaptureUri;}
+	inline std::string getCurrentCaptureName() {return CurrentCaptureName;}
 	inline double getVarianceThreshold() {return VarianceThreshold;}
 	inline double getDistanceMapThreshold() {return DistanceMapThreshold;}
 	inline double getRGThreshold() {return RGThreshold;}
@@ -190,7 +190,7 @@ public:
 	inline void setDeviceId(std::string v) {DeviceId = v;}
 	inline void setStateName(std::string v) {StateName = v;}
 	inline void setCapturePeriod(int v) {CapturePeriod = v;}
-	inline void setCurrentCaptureUri(std::string v) {CurrentCaptureUri = v;}
+	inline void setCurrentCaptureName(std::string v) {CurrentCaptureName = v;}
 	inline void setVarianceThreshold(double v) {VarianceThreshold = v;}
 	inline void setDistanceMapThreshold(double v) {DistanceMapThreshold = v;}
 	inline void setRGThreshold(double v) {RGThreshold = v;}
@@ -206,7 +206,7 @@ private:
 	std::string DeviceId;
 	std::string StateName;
 	int CapturePeriod;
-	std::string CurrentCaptureUri;
+	std::string CurrentCaptureName;
 
 	// Matlab Filament-Algorithm params
 	double VarianceThreshold;

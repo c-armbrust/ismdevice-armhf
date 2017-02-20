@@ -3,9 +3,9 @@
 Notification::~Notification(){}
 //CaptureNotification::~CaptureNotification(){}
 
-CaptureNotification::CaptureNotification(std::string uri)
+CaptureNotification::CaptureNotification(std::string filename)
 {
-	CurrentCaptureUri = uri;
+	CurrentCaptureName = filename;
 }
 
 void CaptureNotificationPublisher::Attach(Subscriber* sub)

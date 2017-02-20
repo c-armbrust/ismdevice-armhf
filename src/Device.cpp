@@ -65,7 +65,7 @@ Device::Device(const std::string& configFile, const std::string& directory)
 		cameraExposure = camera->getExposure();
 	}
 	
-	settings = new DeviceSettings(this->getDeviceId(connectionString), _state->getStateName(), 5000, "", // std::string DeviceId, std::string StateName, int CapturePeriod, std::string CurrentCaptureUri
+	settings = new DeviceSettings(this->getDeviceId(connectionString), _state->getStateName(), 5000, "", // std::string DeviceId, std::string StateName, int CapturePeriod, std::string CurrentCaptureName
 								  0.0025, 8.5, 3.75, 4, 16, // double VarianceThreshold, double DistanceMapThreshold, double RGThreshold, double RestrictedFillingThreshold, double DilateValue
 								  cameraGain, cameraExposure, // int Gain, double Exposure
 								  4, 0, 1000); // int PulseWidth, int Current, int Predelay
@@ -158,11 +158,12 @@ void Device::OnNotification(Publisher* context)
 
 	if(dynamic_cast<CaptureNotification*>(notification) != nullptr)
 	{
-		std::string uri = dynamic_cast<CaptureNotification*>(notification)->CurrentCaptureUri;
-		std::cout << "Camera notification: " << uri << std::endl;
+		std::string blobname = dynamic_cast<CaptureNotification*>(notification)->CurrentCaptureName;
+		std::cout << "Camera notification: " << blobname << std::endl;
 
-		// Update settings with new current capture uri and send them as D2C message
-		settings->setCurrentCaptureUri(uri);
+		// Update settings with new current capture name and send them as D2C message
+		settings->setCurrentCaptureName(blobname);
+		settings->Report();
 		SendD2C_DeviceSettings(CommandType::CAPTURE_UPLOADED);
 	}
 	/* ...
@@ -705,7 +706,7 @@ DeviceSettings::DeviceSettings()
 
 }
 
-DeviceSettings::DeviceSettings(std::string DeviceId, std::string StateName, int CapturePeriod, std::string CurrentCaptureUri, // general settings
+DeviceSettings::DeviceSettings(std::string DeviceId, std::string StateName, int CapturePeriod, std::string CurrentCaptureName, // general settings
 							   double VarianceThreshold, double DistanceMapThreshold, double RGThreshold, double RestrictedFillingThreshold, double DilateValue,     // Matlab Algorithm Settings
 							   int Gain, double Exposure, 								   // camera settings
 							   int PulseWidth, int Current, int Predelay)        				   // pulse settings
@@ -713,7 +714,7 @@ DeviceSettings::DeviceSettings(std::string DeviceId, std::string StateName, int 
 	this->DeviceId = DeviceId;
 	this->StateName = StateName;
 	this->CapturePeriod = CapturePeriod;
-	this->CurrentCaptureUri = CurrentCaptureUri;
+	this->CurrentCaptureName = CurrentCaptureName;
 	this->VarianceThreshold = VarianceThreshold;
 	this->DistanceMapThreshold = DistanceMapThreshold;
 	this->RGThreshold = RGThreshold;
@@ -736,7 +737,7 @@ std::string DeviceSettings::Serialize()
 		{"DeviceId", DeviceId},
 		{"StateName", StateName},
 		{"CapturePeriod", CapturePeriod},
-		{"CurrentCaptureUri", CurrentCaptureUri},
+		{"CurrentCaptureName", CurrentCaptureName},
 		{"VarianceThreshold", VarianceThreshold},
 		{"DistanceMapThreshold", DistanceMapThreshold},
 		{"RGThreshold", RGThreshold},
@@ -761,7 +762,7 @@ void DeviceSettings::Deserialize(std::string jsonStr)
 		DeviceId = values["DeviceId"];
     	StateName = values["StateName"];
 		CapturePeriod = values["CapturePeriod"];
-		CurrentCaptureUri = values["CurrentCaptureUri"];
+		CurrentCaptureName = values["CurrentCaptureName"];
 		VarianceThreshold = values["VarianceThreshold"];
 		DistanceMapThreshold = values["DistanceMapThreshold"];
 		RGThreshold = values["RGThreshold"];
@@ -786,7 +787,7 @@ void DeviceSettings::Report()
 	std::cout << "DeviceId: " <<  DeviceId << std::endl;
 	std::cout << "StateName: " << StateName << std::endl;
 	std::cout << "CapturePeriod: " << CapturePeriod << std::endl;
-	std::cout << "CurrentCaptureUri: " << CurrentCaptureUri << std::endl;
+	std::cout << "CurrentCaptureName: " << CurrentCaptureName << std::endl;
 	std::cout << "VarianceThreshold: " << VarianceThreshold << std::endl;
 	std::cout << "DistanceMapThreshold: " << DistanceMapThreshold << std::endl;
 	std::cout << "RGThreshold: " << RGThreshold << std::endl;

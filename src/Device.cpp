@@ -56,15 +56,39 @@ Device::Device(const std::string& configFile)
 		std::cout << "Error! Registering Direct Method callback failed.\n";
 	}
 
+    // If folder ~/.fwtmp exists, we just rebooted from a firmware update
 	struct stat sb;
 	if (stat("/home/debian/.fwtmp", &sb) == 0 && S_ISDIR(sb.st_mode))
 	{
-		// Directory ~/.fwtmp exists, which means we just restarted after initiating a firmware update
-		int retval = system("rm -rf /home/debian/.fwtmp");
-		if (retval != 0) {
-			std::cout << "Error! Cloudn't delete temporary firmware update directory";
-		}
-		this->SendD2C_FwUpdateStatus(CommandType::FIRMWARE_UPDATE_STATUS, "Firmware update completed");
+        std::string error = "";
+        bool hasError = false;
+        // Check for errors
+        std::ifstream f("/home/debian/.fwtmp/error");
+        if (f.good()) {
+            hasError = true;
+            getline(f, error);
+        }
+
+        if (hasError)
+            // Send message for completed firmware update with error
+            this->SendD2C_FwUpdateStatus(CommandType::FIRMWARE_UPDATE_STATUS, "Error during Firmware Update", error);
+        else {
+            std::string message = "Success";
+            std::string status = "Firmware Update completed";
+
+            // If no error, update device software version
+            // Update config file
+            int r = system("setsetting softwareversion \"$(cat /home/debian/.fwtmp/sw-version)\"");
+
+            // Send message that firmware update was completed
+            this->SendD2C_FwUpdateStatus(CommandType::FIRMWARE_UPDATE_STATUS, status, message);
+        }
+
+        // Remove directory ~/.fwmp
+        int retval = system("rm -rf /home/debian/.fwtmp");
+        if (retval != 0) {
+            std::cout << "Error! Couldn't delete temporary firmware update directory\n";
+        }
 	}
 
 	// Overwrite strings with 0 in memory since we don't know when the RAM is gonna be used by something else
@@ -110,7 +134,7 @@ int Device::DeviceMethodCallback(const char *method_name, const unsigned char *p
         nlohmann::json fw_data = nlohmann::json::parse(std::string((char*)payload, size));
         std::string blob = fw_data["blobUrl"];
         std::string fileName = fw_data["fileName"];
-
+        std::string version = fw_data["version"];
         std::cout << "\nInitiate Firmware Update\n";
 
 		// Respond to method
@@ -125,9 +149,9 @@ int Device::DeviceMethodCallback(const char *method_name, const unsigned char *p
 
 		// Run firmware update in new Thread
 		Device* device = (Device*)userContextCallback;
-		std::thread t([&](std::string blob_t, std::string fileName_t, Device* d){
-			d->FirmwareUpdate(blob_t, fileName_t);
-		}, blob, fileName, device);
+		std::thread t([&](std::string blob_t, std::string fileName_t, std::string version_t, Device* d){
+			d->FirmwareUpdate(blob_t, fileName_t, version_t);
+		}, blob, fileName, version, device);
 		t.detach();
 		// Return status
 		return status;
@@ -145,8 +169,8 @@ int Device::DeviceMethodCallback(const char *method_name, const unsigned char *p
 
 }
 
-void Device::FirmwareUpdate(std::string blobUrl, std::string fileName) {
-    this->firmwareUpdateHandler->HandleFirmwareUpdate(blobUrl, fileName, publicKeyUrl);
+void Device::FirmwareUpdate(std::string blobUrl, std::string fileName, std::string version) {
+    this->firmwareUpdateHandler->HandleFirmwareUpdate(blobUrl, fileName, publicKeyUrl, version);
 }
 // Pub Sub interface
 void Device::OnNotification(Publisher* context)
@@ -392,17 +416,26 @@ void Device::SendD2C_DeviceSettings(std::string cmdType)
 }
 // Look how to pass parameter to the threads lambda:
 // http://stackoverflow.com/questions/25536956/how-to-write-lambda-function-with-arguments-c
-void Device::SendD2C_FwUpdateStatus(std::string cmdType, std::string status)
+void Device::SendD2C_FwUpdateStatus(std::string cmdType, std::string status, std::string message)
 {
-	std::thread t([&](std::string commandType, std::string stat){
+	std::thread t([&](std::string commandType, std::string stat, std::string msg){
 		try
 		{
+            // Get current firmware version from config file
+            std::ifstream configFile("/home/debian/.ismdata/config.json");
+            nlohmann::json config = nlohmann::json::parse(configFile);
+            configFile.close();
+            // Get logfile
 			std::ifstream logFile("/home/debian/.ismdata/fw-update-log");
 			std::string logData((std::istreambuf_iterator<char>(logFile)), std::istreambuf_iterator<char>());
+            logFile.close();
+            // Response object
 			nlohmann::json obj = {
 					{"DeviceId", this->settings->getDeviceId()},
 					{"FwUpdateStatus", stat},
-					{"Log", logData}
+                    {"Message", msg},
+					{"Log", logData},
+                    {"Version", config["softwareversion"]}
 			};
 			IOTHUB_MESSAGE_HANDLE messageHandle;
 			char sendBuffer[MAX_SEND_BUFFER_SIZE];
@@ -425,7 +458,7 @@ void Device::SendD2C_FwUpdateStatus(std::string cmdType, std::string status)
 		{
 			std::cout << e.what() << std::endl;
 		}
-	}, cmdType, status);
+	}, cmdType, status, message);
 
 	t.detach();
 }

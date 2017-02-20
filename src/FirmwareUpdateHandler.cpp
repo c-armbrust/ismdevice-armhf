@@ -4,6 +4,7 @@
 
 #include <stdlib.h>
 #include <azure_c_shared_utility/threadapi.h>
+#include <sys/stat.h>
 #include "iothub_client.h"
 #include "FirmwareUpdateHandler.h"
 #include "json.hpp"
@@ -15,7 +16,7 @@ FirmwareUpdateHandler::FirmwareUpdateHandler(utility::string_t stoconnstr, utili
     memset((void*)stoconnstr.data(), 0, stoconnstr.size());
 }
 
-void FirmwareUpdateHandler::HandleFirmwareUpdate(std::string blobUrl, std::string fileName, std::string publicKeyUrl) {
+void FirmwareUpdateHandler::HandleFirmwareUpdate(std::string blobUrl, std::string fileName, std::string publicKeyUrl, std::string version) {
     // Sleep so the direct method handler can return a status
     ThreadAPI_Sleep(2000);
     // Download firmware update file.
@@ -28,6 +29,8 @@ void FirmwareUpdateHandler::HandleFirmwareUpdate(std::string blobUrl, std::strin
     int r = system("/home/debian/ism-device-scripts/verify.sh");
     // If it doesn't return with success
     if (r != 0) {
+        // Just try make a directory, it might already exist
+        mkdir("/home/debian/.fwtmp", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
         return this->HandleFirmwareUpdateError("Error during verification of firmware update.");
     }
 
@@ -41,6 +44,11 @@ void FirmwareUpdateHandler::HandleFirmwareUpdate(std::string blobUrl, std::strin
     if (r != 0) {
         return this->HandleFirmwareUpdateError("Error during firmware update extraction.");
     }
+
+    // Apply version
+    std::ofstream out("/home/debian/.fwtmp/sw-version");
+    out << version;
+    out.close();
 
     // Apply firmware update
     std::cout << "-----------------------------------------------\n";
@@ -62,6 +70,13 @@ void FirmwareUpdateHandler::DownloadFirmwareUpdate(std::string blobUrl, std::str
 void FirmwareUpdateHandler::HandleFirmwareUpdateError(std::string error) {
     std::cout << "Error during firmware update: " << error << std::endl;
     std::cout << "---------- Firmware Update unsuccessful ----------\n";
+
+    // Write error to file
+    std::ofstream out("/home/debian/.fwtmp/error");
+    out << error;
+    out.close();
+    // Close program (this will reopen automatically and read the error)
+    exit(1);
 }
 
 void FirmwareUpdateHandler::InitBlobStorage(utility::string_t storageConnectionString)

@@ -6,8 +6,9 @@ int main(int argc, char** argv)
 	int opt;
     std::string configFile = "";
 	std::string directory = "";
+	bool fwupdates = true;
 	
-	while((opt = getopt(argc, argv, "f:c:")) != -1) {
+	while((opt = getopt(argc, argv, "f:c:n")) != -1) {
 		switch (opt) {
 			case 'f': {
 				configFile = optarg;
@@ -19,6 +20,10 @@ int main(int argc, char** argv)
 				std::cout << "Simulating cam from directory " << directory << std::endl;
 				break;
 			}
+			case 'n':
+				fwupdates = false;
+				std::cout << "Not registering device method handler for Firmware Updates" << std::endl;
+				break;
 			case '?': {
 				if (optopt == 'f')
 					std::cerr << "Option -f requires an argument.\n";
@@ -36,7 +41,7 @@ int main(int argc, char** argv)
 
 	}
 
-	Device* d = new Device(configFile, directory);
+	Device* d = new Device(fwupdates, configFile, directory);
 	d->SubscribeNotifications();
 
 	// Full state test

@@ -14,7 +14,7 @@ extern "C" {
 	#include "crypto.h"
 }
 
-Device::Device(const std::string& configFile, const std::string& directory)
+Device::Device(bool fwupdates, const std::string& configFile, const std::string& directory)
 {
 	this->directory = directory;
 	// Declare device settings variable
@@ -70,12 +70,13 @@ Device::Device(const std::string& configFile, const std::string& directory)
 								  cameraGain, cameraExposure, // int Gain, double Exposure
 								  4, 0, 1000); // int PulseWidth, int Current, int Predelay
 
-/*
+
 	// Register direct method callback
-	if (IoTHubClient_SetDeviceMethodCallback(iotHubClientHandle, Device::DeviceMethodCallback, this) != IOTHUB_CLIENT_OK) {
-		std::cout << "Error! Registering Direct Method callback failed.\n";
-	}
-*/
+    if (fwupdates)
+        if (IoTHubClient_SetDeviceMethodCallback(iotHubClientHandle, Device::DeviceMethodCallback, this) != IOTHUB_CLIENT_OK) {
+            std::cout << "Error! Registering Direct Method callback failed.\n";
+        }
+
 
     // If folder ~/.fwtmp exists, we just rebooted from a firmware update
 	struct stat sb;

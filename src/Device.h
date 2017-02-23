@@ -24,7 +24,7 @@ class DeviceSettings;
 class Device : public Subscriber
 {
 public:
-	Device(const std::string& configFile = "", const std::string& directory = "");
+	Device(bool fwupdates, const std::string& configFile = "", const std::string& directory = "");
 	~Device();
 	IOTHUBMESSAGE_DISPOSITION_RESULT Start();
 	IOTHUBMESSAGE_DISPOSITION_RESULT Stop();

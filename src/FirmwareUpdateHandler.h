@@ -11,7 +11,7 @@
 class FirmwareUpdateHandler {
 public:
     FirmwareUpdateHandler(utility::string_t, utility::string_t, std::string);
-    void HandleFirmwareUpdate(std::string blobUrl, std::string fileName, std::string publicKeyUrl);
+    void HandleFirmwareUpdate(std::string blobUrl, std::string fileName, std::string publicKeyUrl, std::string version);
 
 private:
     void InitBlobStorage(utility::string_t storageConnectionString);

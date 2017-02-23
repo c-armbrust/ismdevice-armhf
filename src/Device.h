@@ -40,7 +40,7 @@ public:
 
     // Device direct method callback function
     static int DeviceMethodCallback(const char* method_name, const unsigned char* payload, size_t size, unsigned char** response, size_t* resp_size, void* userContextCallback);
-    void FirmwareUpdate(std::string blobUrl, std::string fileName);
+    void FirmwareUpdate(std::string blobUrl, std::string fileName, std::string version);
 
 
 private:
@@ -53,6 +53,7 @@ private:
 	static IOTHUBMESSAGE_DISPOSITION_RESULT ReceiveMessageCallback(IOTHUB_MESSAGE_HANDLE, void*);
 	static void SendConfirmationCallback(IOTHUB_CLIENT_CONFIRMATION_RESULT, void*);
 	void SendD2C_DeviceSettings(std::string);
+	void SendD2C_FwUpdateStatus(std::string, std::string, std::string);
 	void StartCamera();
 	void StopCamera();
 	void SetCameraPruValues();

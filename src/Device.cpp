@@ -9,7 +9,7 @@
 #include <exception>
 #include <iothubtransportmqtt.h>
 #include "FirmwareUpdateHandler.h"
-
+#include <sys/stat.h>
 extern "C" {
 	#include "crypto.h"
 }
@@ -77,6 +77,41 @@ Device::Device(const std::string& configFile, const std::string& directory)
 	}
 */
 
+    // If folder ~/.fwtmp exists, we just rebooted from a firmware update
+	struct stat sb;
+	if (stat("/home/debian/.fwtmp", &sb) == 0 && S_ISDIR(sb.st_mode))
+	{
+        std::string error = "";
+        bool hasError = false;
+        // Check for errors
+        std::ifstream f("/home/debian/.fwtmp/error");
+        if (f.good()) {
+            hasError = true;
+            getline(f, error);
+        }
+
+        if (hasError)
+            // Send message for completed firmware update with error
+            this->SendD2C_FwUpdateStatus(CommandType::FIRMWARE_UPDATE_STATUS, "Error during Firmware Update", error);
+        else {
+            std::string message = "Success";
+            std::string status = "Firmware Update completed";
+
+            // If no error, update device software version
+            // Update config file
+            int r = system("setsetting softwareversion \"$(cat /home/debian/.fwtmp/sw-version)\"");
+
+            // Send message that firmware update was completed
+            this->SendD2C_FwUpdateStatus(CommandType::FIRMWARE_UPDATE_STATUS, status, message);
+        }
+
+        // Remove directory ~/.fwmp
+        int retval = system("rm -rf /home/debian/.fwtmp");
+        if (retval != 0) {
+            std::cout << "Error! Couldn't delete temporary firmware update directory\n";
+        }
+	}
+
 	// Overwrite strings with 0 in memory since we don't know when the RAM is gonna be used by something else
 	memset((void*)connectionString.data(), 0, connectionString.size());
 	memset((void*)storage_connection_string.data(), 0, storage_connection_string.size());
@@ -123,30 +158,43 @@ int Device::DeviceMethodCallback(const char *method_name, const unsigned char *p
         nlohmann::json fw_data = nlohmann::json::parse(std::string((char*)payload, size));
         std::string blob = fw_data["blobUrl"];
         std::string fileName = fw_data["fileName"];
-
+        std::string version = fw_data["version"];
         std::cout << "\nInitiate Firmware Update\n";
-        // Download data
-        Device* device = (Device*)userContextCallback;
-        device->FirmwareUpdate(blob, fileName);
+
+		// Respond to method
+		char* RESPONSE_STRING = (char*)"{ \"Response\": \"Initiating Firmware Update\" }";
+		int status = 200;
+
+		*resp_size = strlen(RESPONSE_STRING);
+		if ((*response = (unsigned char*)malloc(*resp_size)) == NULL)
+			status = -1;
+		else
+			memcpy(*response, RESPONSE_STRING, *resp_size);
+
+		// Run firmware update in new Thread
+		Device* device = (Device*)userContextCallback;
+		std::thread t([&](std::string blob_t, std::string fileName_t, std::string version_t, Device* d){
+			d->FirmwareUpdate(blob_t, fileName_t, version_t);
+		}, blob, fileName, version, device);
+		t.detach();
+		// Return status
+		return status;
     }
+	// Respond to method
+	char* RESPONSE_STRING = (char*)"{ \"Response\": \"Unknown function called\" }";
+	int status = 404;
+	*resp_size = strlen(RESPONSE_STRING);
+	if ((*response = (unsigned char*)malloc(*resp_size)) == NULL)
+		status = -1;
+	else
+		memcpy(*response, RESPONSE_STRING, *resp_size);
+	return status;
 
-    // Respond to method
-    char* RESPONSE_STRING = (char*)"{ \"Response\": \"This is the response from the device\" }";
-    int status = 200;
-    std::cout << "Response status:  " << status << std::endl;
-    std::cout << "Response payload: " << RESPONSE_STRING << std::endl;
 
-    *resp_size = strlen(RESPONSE_STRING);
-    if ((*response = (unsigned char*)malloc(*resp_size)) == NULL)
-        status = -1;
-    else
-        memcpy(*response, RESPONSE_STRING, *resp_size);
-
-    return status;
 }
 
-void Device::FirmwareUpdate(std::string blobUrl, std::string fileName) {
-    this->firmwareUpdateHandler->HandleFirmwareUpdate(blobUrl, fileName, publicKeyUrl);
+void Device::FirmwareUpdate(std::string blobUrl, std::string fileName, std::string version) {
+    this->firmwareUpdateHandler->HandleFirmwareUpdate(blobUrl, fileName, publicKeyUrl, version);
 }
 // Pub Sub interface
 void Device::OnNotification(Publisher* context)
@@ -412,7 +460,54 @@ void Device::SendD2C_DeviceSettings(std::string cmdType)
 
 	t.detach();
 }
+// Look how to pass parameter to the threads lambda:
+// http://stackoverflow.com/questions/25536956/how-to-write-lambda-function-with-arguments-c
+void Device::SendD2C_FwUpdateStatus(std::string cmdType, std::string status, std::string message)
+{
+	std::thread t([&](std::string commandType, std::string stat, std::string msg){
+		try
+		{
+            // Get current firmware version from config file
+            std::ifstream configFile("/home/debian/.ismdata/config.json");
+            nlohmann::json config = nlohmann::json::parse(configFile);
+            configFile.close();
+            // Get logfile
+			std::ifstream logFile("/home/debian/.ismdata/fw-update-log");
+			std::string logData((std::istreambuf_iterator<char>(logFile)), std::istreambuf_iterator<char>());
+            logFile.close();
+            // Response object
+			nlohmann::json obj = {
+					{"DeviceId", this->settings->getDeviceId()},
+					{"FwUpdateStatus", stat},
+                    {"Message", msg},
+					{"Log", logData},
+                    {"Version", config["softwareversion"]}
+			};
+			IOTHUB_MESSAGE_HANDLE messageHandle;
+			char sendBuffer[MAX_SEND_BUFFER_SIZE];
 
+			// fill send buffer
+			sprintf_s(sendBuffer, MAX_SEND_BUFFER_SIZE, obj.dump().c_str());
+			messageHandle = IoTHubMessage_CreateFromByteArray((const unsigned char*)sendBuffer, strlen(sendBuffer));
+
+			// set event properties
+			MAP_HANDLE propMap = IoTHubMessage_Properties(messageHandle);
+			Map_AddOrUpdate(propMap, EventType::D2C_COMMAND.c_str(), commandType.c_str());
+
+			std::cout << "send message, size=" << strlen(sendBuffer) << std::endl;
+			std::cout << "CommandType: " << commandType << std::endl;
+
+			// send the message
+			IoTHubClient_SendEventAsync(iotHubClientHandle, messageHandle, SendConfirmationCallback, this);
+		}
+		catch(std::exception& e)
+		{
+			std::cout << e.what() << std::endl;
+		}
+	}, cmdType, status, message);
+
+	t.detach();
+}
 
 void Device::SendConfirmationCallback(IOTHUB_CLIENT_CONFIRMATION_RESULT result, void* userContextCallback)
 {

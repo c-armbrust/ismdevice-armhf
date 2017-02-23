@@ -20,16 +20,17 @@ DirCamera::~DirCamera()
 
 void DirCamera::Start()
 {
-	this->running = true;
-	std::thread t([&]{
-		HandleCaptures();
-	});
-	t.detach();
+	std::lock_guard<std::mutex> lk {running_mutex};
+		running = true;
+	std::thread t1{ [&]{this->HandleCaptures();} };
+	t1.detach();
+
 }
 
 void DirCamera::Stop()
 {
-	this->running = false;
+	std::lock_guard<std::mutex> lk {running_mutex};
+		running = false;
 }
 
 void DirCamera::setCapturePeriod(int period)
@@ -47,7 +48,7 @@ void DirCamera::GetCameraInfo()
 
 void DirCamera::HandleCaptures()
 {
-	while(this->running)
+	while(running)
 	{
 		// Get a random file from the loaded capture files
 		std::string file = captures[rand() % captures.size()];
@@ -56,8 +57,7 @@ void DirCamera::HandleCaptures()
 		UploadCaptureToBlobStorage(file);
 			
 			
-		std::this_thread::sleep_for(std::chrono::seconds(capturePeriod));
-		std::cout << "running: " << this->running << std::endl;
+		std::this_thread::sleep_for(std::chrono::milliseconds(capturePeriod));
 	}
 }
 

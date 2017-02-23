@@ -2,6 +2,7 @@
 #define DIR_CAMERA_H
 
 #include <thread>
+#include <mutex>
 #include <iostream>
 #include <string.h>
 #include <time.h>
@@ -35,9 +36,11 @@ private:
 
 private:
 	std::string directory;
-	bool running;
 	int capturePeriod;
 	std::vector<std::string> captures;
+
+	bool running;
+	std::mutex running_mutex;	
 
 	// Blob storage
 	const utility::string_t containerName;
